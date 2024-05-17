@@ -80,7 +80,7 @@ WSGI_APPLICATION = 'social_media.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'coursedb',
+        'NAME': 'social_media_db',
         'USER': 'root',
         'PASSWORD': os.getenv('DATABASE_PASS'),
         'HOST': ''  # mặc định localhost
