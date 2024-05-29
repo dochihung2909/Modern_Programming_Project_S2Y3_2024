@@ -1,5 +1,5 @@
 import { KeyboardAvoidingView, ScrollView, Text, View, Image, Platform } from 'react-native'
-import React, {useState} from 'react'
+import React, {useState, useEffect} from 'react'
 import { HelperText, TextInput, TouchableRipple, Button } from 'react-native-paper';
 import DropDown from 'react-native-paper-dropdown'; 
 import * as ImagePicker from 'expo-image-picker'; 
@@ -48,6 +48,10 @@ export default Register = () => {
             'name': 'email'
         }]; 
 
+    useEffect(() => {
+        console.log(user)
+    }, [user])
+
     return (
       <View>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}> 
@@ -72,9 +76,10 @@ export default Register = () => {
                             alignItems: 'center',
                             margin: 10
                         }}>
-                        <Image source={{uri: user.avatar.uri}}/> 
                     </View>
                 }
+                <Image className='flex w-[80px] h-[80px]' source={{uri: user?.avatar?.uri}}/> 
+
 
                 <Button icon="account" loading={loading} mode="contained" onPress={register}>ĐĂNG KÝ</Button>
             </ScrollView>
