@@ -1,10 +1,12 @@
-import { View, Text } from 'react-native'
-import React from 'react'
+import { View, Text, Image, ScrollView } from 'react-native'
+import React from 'react' 
+import Post from '../Post/Post'
 
 export default function Home() {
   return (
-    <View>
-      <Text>Home</Text>
-    </View>
+    <ScrollView>
+      <Text className="text-black">Hello</Text>
+      <Post></Post> 
+    </ScrollView>
   )
 }
