@@ -139,3 +139,4 @@ AUTH_USER_MODEL = 'core.User'
 ROOT_URLCONF = 'social_media.urls'
 
 MEDIA_ROOT = '%s/core/static/' % BASE_DIR
+
