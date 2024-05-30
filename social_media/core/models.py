@@ -21,7 +21,7 @@ class Role(BaseModel):
 
 
 class User(AbstractUser):
-    avatar = models.ImageField(upload_to='user/%Y/%m', null=True)
+    avatar = models.ImageField(upload_to='users/%Y/%m', null=True)
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True)
 
 
