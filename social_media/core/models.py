@@ -6,7 +6,7 @@ from django.db import models
 class BaseModel(models.Model):
     created_date = models.DateTimeField(auto_now_add=True, null=True)
     updated_date = models.DateTimeField(auto_now=True, null=True)
-    active = models.BooleanField(default=True)
+    active = models.BooleanField(default=False)
 
     class Meta:
         abstract = True
@@ -22,7 +22,14 @@ class Role(BaseModel):
 
 class User(AbstractUser):
     avatar = models.ImageField(upload_to='users/%Y/%m', null=True)
-    role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True)
+    role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, default=1)
+
+
+class Alumni(User):
+    code = models.CharField(max_length=50)
+
+    def __str__(self):
+        return f'{self.code} - {self.first_name} {self.last_name}'
 
 
 class Tag(BaseModel):

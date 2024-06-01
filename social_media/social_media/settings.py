@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     'ckeditor',
     'ckeditor_uploader',
     'rest_framework',
+    'drf_yasg',
+    'oauth2_provider',
 ]
 
 MIDDLEWARE = [
@@ -141,3 +143,14 @@ ROOT_URLCONF = 'social_media.urls'
 
 MEDIA_ROOT = '%s/core/static/' % BASE_DIR
 
+REST_FRAMEWORK = {
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.JSONParser',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
+    )
+}
+
+CLIENT_ID = 'DFRVzJjA8anyCS1Bz2Ml3USFlON25FNiB7iX3Rvj'
+CLIENT_SECRET = '0XxuAYpME7YEHe8oyNsBbMGw2mAoGeckkmSa4jCw5tNHlua6AMrlkF0uq5BDbhqsTWSJ6Z1Ljr13RuSjhNxIBtM6Y0Q382pVi2QrxXqJSTSYdSq6chZ8QEZOl01dZBS4'

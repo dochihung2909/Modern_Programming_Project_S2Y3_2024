@@ -1,5 +1,6 @@
 from ckeditor_uploader.widgets import CKEditorUploadingWidget
 from django.contrib import admin
+from django.contrib.auth.models import Permission, Group
 from django import forms
 from django.db.models import Count
 from django.template.response import TemplateResponse
@@ -94,3 +95,6 @@ admin_site.register(LikeComment, LikeCommentAdmin)
 admin_site.register(Comment, CommentAdmin)
 admin_site.register(Role, RoleAdmin)
 admin_site.register(Like, LikeAdmin)
+admin_site.register(Permission)
+admin_site.register(Group)
+
