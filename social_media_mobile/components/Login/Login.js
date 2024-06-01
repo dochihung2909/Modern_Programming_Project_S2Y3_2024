@@ -1,9 +1,11 @@
 import { KeyboardAvoidingView, ScrollView, Text , View, Image, Platform, Pressable } from 'react-native'
 import React from 'react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useContext } from 'react'
 import { HelperText, TextInput , TouchableRipple, Button, Provider } from 'react-native-paper'  
-import DropDown from "react-native-paper-dropdown";  
-import { StatusBar } from 'expo-status-bar';
+import DropDown from "react-native-paper-dropdown";   
+import { useNavigation } from "@react-navigation/native";
+import { MyDispatchContext } from '../../configs/Contexts';
+import APIs, { endpoints } from '../../configs/APIs'; 
 
 const Login = ({navigation}) => { 
     const [type, setType] = useState(1) 
@@ -11,6 +13,8 @@ const Login = ({navigation}) => {
     const [showDropdown, setShowDropdown]  = useState(false);
     const [err, setErr] = React.useState(false);
     const [loading, setLoading] = React.useState(false);
+    const dispatch = useContext(MyDispatchContext);
+    const nav = useNavigation();
 
     const typeList = [ 
         {
@@ -39,9 +43,38 @@ const Login = ({navigation}) => {
         "secureTextEntry": true
     }];  
 
-    const login = () => {
-        console.log("login")
+    const login = async () => {
+        updateSate('type', type) 
+        setLoading(true);
+        try {
+            let res = await APIs.post(endpoints['login'], {
+                ...user,
+                'client_id': process.env.CLIENT_ID,
+                'client_secret': process.env.CLIENT_SECRET,
+                'grant_type': 'password'
+            });
+            console.info(res.data);
+
+            await AsyncStorage.setItem("token", res.data.access_token);
+            
+            setTimeout(async () => {
+                let user = await authApi(res.data.access_token).get(endpoints['current-user']);
+                console.info(user.data);
+
+                dispatch({
+                    'type': "login",
+                    'payload': user.data
+                })
+
+                nav.navigate('Home');
+            }, 100);
+        } catch (ex) {
+            console.error(ex);
+        } finally {
+            setLoading(false);
+        }   
     }
+ 
 
     const updateSate = (field, value) => {
         setUser(current => {
@@ -49,14 +82,14 @@ const Login = ({navigation}) => {
         });
     }
 
-    useEffect(() => {
-        console.log(type)
-    }, [type])
+    // useEffect(() => {
+    //     console.log(type)
+    // }, [type])
 
 
-    useEffect(() => {
-        console.log(user)
-    }, [user])
+    // useEffect(() => {
+    //     console.log(user)
+    // }, [user])
 
 
     return (
