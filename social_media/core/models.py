@@ -6,7 +6,7 @@ from django.db import models
 class BaseModel(models.Model):
     created_date = models.DateTimeField(auto_now_add=True, null=True)
     updated_date = models.DateTimeField(auto_now=True, null=True)
-    active = models.BooleanField(default=True)
+    active = models.BooleanField(default=False)
 
     class Meta:
         abstract = True
@@ -52,30 +52,30 @@ class Post(BaseModel):
         return f'{self.user_id} - {self.content[:50] + '...' if len(self.content) > 50 else self.content}'
 
 
-# class ItemBase(BaseModel):
-#     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
-#
-#     class Meta:
-#         abstract = True
+class ItemBase(BaseModel):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+
+    class Meta:
+        abstract = True
 
 
-class Comment(BaseModel):
+class Comment(ItemBase):
     content = models.CharField(max_length=255)
 
-    # def __str__(self):
-    #     return f'{self.user_id} - {self.content[:50]}'
+    def __str__(self):
+        return f'{self.user_id} - {self.content[:50]}'
 
 
 class Interaction(BaseModel):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
-    post = models.ForeignKey(Post, on_delete=models.CASCADE, null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, null=True, on_delete=models.CASCADE)
 
     class Meta:
         abstract = True
 
 
 class Comment(Interaction):
-    content = models.CharField(max_length=255)
+    content = models.CharField(max_length=255, null=True)
 
 
 class LikeType(BaseModel):
@@ -90,8 +90,8 @@ class Like(Interaction):
     active = models.BooleanField(default=True)
     like_type = models.ForeignKey(LikeType, on_delete=models.CASCADE, null=True)
 
-    class Meta:
-        abstract = True
+    # class Meta:
+    #     abstract = True
 
 
 class LikePost(Like):

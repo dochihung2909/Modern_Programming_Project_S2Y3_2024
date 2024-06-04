@@ -27,7 +27,7 @@ class PostViewSet(viewsets.ViewSet,
         return queryset
 
     def get_permissions(self):
-        if self.action in ['add_comment']:
+        if self.action in ['add_comment', 'add_post']:
             return [permissions.IsAuthenticated()]
 
         return [permissions.AllowAny()]
@@ -37,6 +37,13 @@ class PostViewSet(viewsets.ViewSet,
             return serializers.AuthenticatedPostDetailsSerializer
 
         return self.serializer_class
+
+    @action(methods=['post'], url_path='posts')
+    def add_post(self, request):
+        c = self.get_object().comment_set.create(content=request.data.get('content'),
+                                                 user=request.user)
+        return Response(serializers.CommentSerializer(c).data,
+                        status=status.HTTP_201_CREATED)
 
     @action(methods=['get'], url_path='comments', detail=True)
     def get_comments(self, request, pk):
