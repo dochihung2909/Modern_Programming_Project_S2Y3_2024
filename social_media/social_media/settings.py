@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-_egdt4-%1e(le!)vcq=x&$98z-du4ssehk$nm&ro&$rq&439dl'
+SECRET_KEY = os.getenv('SECRET_KEY_DJANGO')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -144,13 +144,17 @@ ROOT_URLCONF = 'social_media.urls'
 MEDIA_ROOT = '%s/core/static/' % BASE_DIR
 
 REST_FRAMEWORK = {
-    'DEFAULT_PARSER_CLASSES': [
-        'rest_framework.parsers.JSONParser',
-    ],
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
     )
 }
 
 CLIENT_ID = 'DFRVzJjA8anyCS1Bz2Ml3USFlON25FNiB7iX3Rvj'
-CLIENT_SECRET = '0XxuAYpME7YEHe8oyNsBbMGw2mAoGeckkmSa4jCw5tNHlua6AMrlkF0uq5BDbhqsTWSJ6Z1Ljr13RuSjhNxIBtM6Y0Q382pVi2QrxXqJSTSYdSq6chZ8QEZOl01dZBS4'
+# 2eD5Boms8AVzsmGCTfaLtXYcTPwbBByhdm9pgVaG
+CLIENT_SECRET = os.getenv('CLIENT_SECRET_OAUTH')
+# GYk5ZlzxuqNlSCS6OguEoNYfWyWQDP8Ol3TESDa7QxUqNbfjWWeiXIdoHlYTgqSSO3bMz8IBrJhIiHnwU4tRbc8PYiYPFnGKy14p7Cn3Hfw8foxOjGVtiCzrukUFvNpw
+
+
+OAUTH2_PROVIDER = {
+    'OAUTH2_BACKEND_CLASS': 'oauth2_provider.oauth2_backends.JSONOAuthLibCore'
+}
