@@ -49,7 +49,7 @@ class Post(BaseModel):
     tags = models.ManyToManyField(Tag)
 
     def __str__(self):
-        return f'{self.user_id} - {self.content[:50] + '...' if len(self.content) > 50 else self.content}'
+        return f'{self.user_id} - {self.content[:50] + "..." if len(self.content) > 50 else self.content}'
 
 
 # class ItemBase(BaseModel):
