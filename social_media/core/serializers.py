@@ -12,15 +12,15 @@ class BaseSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField(source='image')
     tags = TagSerializer(many=True)
 
-    def get_image(self, course):
-        if course.image:
+    def get_image(self, post):
+        if post.image:
             request = self.context.get('request')
             if request:
-                return request.build_absolute_uri('/static/%s' % course.image.name)
-            return '/static/%s' % course.image.name
+                return request.build_absolute_uri('/static/%s' % post.image.name)
+            return '/static/%s' % post.image.name
 
 
-class PostSerializer(BaseSerializer):
+class PostSerializer(serializers.ModelSerializer):
     # image = serializers.SerializerMethodField(source='image')
 
     # def to_representation(self, instance):
@@ -46,7 +46,7 @@ class PostDetailsSerializer(PostSerializer):
 
     class Meta:
         model = PostSerializer.Meta.model
-        fields = PostSerializer.Meta.fields + ['content', 'tags']
+        fields = PostSerializer.Meta.fields + ['tags']
 
 
 class AuthenticatedPostDetailsSerializer(PostDetailsSerializer):
@@ -56,7 +56,6 @@ class AuthenticatedPostDetailsSerializer(PostDetailsSerializer):
         request = self.context.get('request')
         if request.user.is_authenticated:
             return post.likepost_set.filter(active=True).exists()
-        # return post.likepost_set.filter(active=True).exists()
 
     class Meta:
         model = PostDetailsSerializer.Meta.model
@@ -95,23 +94,18 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = ['id', 'content', 'user']
-#
-#
-# class LikeSerializer(ItemSerializer):
-#     class Meta:
-#         model = Like
-#         fields = ['id', 'name', 'image']
-#
-#
-# class LikePostSerializer(LikeSerializer):
-#
-#     class Meta:
-#         model = LikePost
-#         fields = ['id', 'user', 'post', 'like']
-#
-#
-# class LikeCommentSerializer(LikeSerializer):
-#
-#     class Meta:
-#         model = LikeComment
-#         fields = ['id', 'user', 'like', 'comment']
+
+
+class AuthenticatedCommentSerializer(CommentSerializer):
+    liked = serializers.SerializerMethodField()
+
+    def get_liked(self, comment):
+        request = self.context.get('request')
+        if request.user.is_authenticated:
+            return comment.likecomment_set.filter(active=True).exists()
+
+    class Meta:
+        model = CommentSerializer.Meta.model
+        fields = CommentSerializer.Meta.fields + ['liked']
+
+

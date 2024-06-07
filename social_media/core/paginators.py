@@ -5,3 +5,6 @@ class BasePaginator(pagination.PageNumberPagination):
     page_size = 5
 
 
+class CommentPaginator(BasePaginator):
+    pass
+

@@ -1,0 +1,53 @@
+{% extends 'admin/base_site.html' %}
+
+{% block content %}
+<h1>THỐNG KÊ THÔNG TIN SỐ LƯỢNG BÀI VIẾT THEO NGƯỜI DÙNG</h1>
+
+<ul>
+    {% for p in post_user_stats %}
+    <li><strong>{{ p.id }} - {{ p.username }}</strong> có {{ p.c }} bài viết
+    </li>
+    {% endfor %}
+</ul>
+
+
+
+<div style="width: 50%">
+    <canvas id="post_chart"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let labels = [];
+    let data = [];
+    {% for p in post_user_stats %}
+        labels.push('{{ p.username }}')
+        data.push({{ p.c }})
+    {% endfor %}
+
+    window.onload = function() {
+         const ctx = document.getElementById('post_chart');
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Số lượng',
+        data: data,
+        borderWidth: 1,
+        backgroundColor: ['red', 'green', 'blue']
+      }]
+    },
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+    }
+
+</script>
+{% endblock %}

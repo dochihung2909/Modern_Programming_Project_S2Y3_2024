@@ -3,11 +3,14 @@ from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from core import serializers, paginators, perms
-from .models import Post, User, Comment, LikePost
+from .models import Post, User, Comment, LikePost, LikeComment
 
 
 class PostViewSet(viewsets.ViewSet,
-                  generics.ListAPIView):
+                  generics.ListAPIView,
+                  generics.RetrieveAPIView,
+                  generics.UpdateAPIView,
+                  generics.DestroyAPIView):
     queryset = Post.objects.filter(active=True)
     serializer_class = serializers.PostSerializer
     permission_classes = [perms.OwnerAuthenticated]
@@ -27,35 +30,23 @@ class PostViewSet(viewsets.ViewSet,
         return queryset
 
     def get_permissions(self):
-        if self.action in ['add_comment', 'add_post']:
+        if self.action in ['add_post', 'add_comment']:
             return [permissions.IsAuthenticated()]
 
-        return [permissions.AllowAny()]
+        return [permission() for permission in self.permission_classes]
 
     def get_serializer_class(self):
         if self.request.user.is_authenticated:
             return serializers.AuthenticatedPostDetailsSerializer
-
         return self.serializer_class
 
-    @action(methods=['post'], url_path='posts')
+    @action(methods=['post'], url_path='add_post', detail=False)
     def add_post(self, request):
-        c = self.get_object().comment_set.create(content=request.data.get('content'),
-                                                 user=request.user)
-        return Response(serializers.CommentSerializer(c).data,
+        p = Post.objects.create(user=request.user,
+                                content=request.data.get('content'),
+                                image=request.data.get('image'))
+        return Response(serializers.PostSerializer(p).data,
                         status=status.HTTP_201_CREATED)
-
-    @action(methods=['get'], url_path='comments', detail=True)
-    def get_comments(self, request, pk):
-        comments = self.get_object().comment_set.select_related('user').order_by('-id')
-
-        paginator = paginators.CommentPaginator()
-        page = paginator.paginate_queryset(comments, request)
-        if page is not None:
-            serializer = serializers.CommentSerializer(page, many=True)
-            return paginator.get_paginated_response(serializer.data)
-
-        return Response(serializers.CommentSerializer(comments, many=True).data)
 
     @action(methods=['post'], url_path='comments', detail=True)
     def add_comment(self, request, pk):
@@ -68,11 +59,9 @@ class PostViewSet(viewsets.ViewSet,
     def like(self, request, pk):
         like, created = LikePost.objects.get_or_create(user=request.user,
                                                        post=self.get_object())
-
         if not created:
             like.active = not like.active
             like.save()
-
         return Response(serializers.AuthenticatedPostDetailsSerializer(self.get_object(), context={'request': request}).data,
                         status=status.HTTP_200_OK)
 
@@ -102,18 +91,33 @@ class UserViewSet(viewsets.ViewSet,
 
 class CommentViewSet(viewsets.ViewSet,
                      generics.DestroyAPIView,
-                     generics.UpdateAPIView):
-    queryset = User.objects.filter(is_active=True)
-    serializer_class = serializers.UserSerializer
-    parser_classes = [parsers.MultiPartParser]
+                     generics.UpdateAPIView,
+                     generics.RetrieveAPIView):
+    queryset = Comment.objects.all()
+    serializer_class = serializers.CommentSerializer
+    permission_classes = [perms.OwnerAuthenticated]
 
     def get_permissions(self):
-        if self.action.__eq__('current-user'):
+        if self.action in ['like']:
             return [permissions.IsAuthenticated()]
 
-        return [permissions.AllowAny()]
+        return [permission() for permission in self.permission_classes]
 
-    @action(methods=['get'], detail=False, url_name='current-user')
-    def current_user(self, request):
-        return Response(serializers.UserSerializer(request.user).data)
+    @action(methods=['post'], url_path='like', detail=True)
+    def like(self, request, pk):
+        c = self.get_object()
+        like, created = LikeComment.objects.get_or_create(user=request.user,
+                                                          comment=c)
+        if not created:
+            like.active = not like.active
+            like.save()
+        return Response(
+            serializers.AuthenticatedCommentSerializer(c, context={'request': request}).data,
+            status=status.HTTP_200_OK)
+
+    @action(methods=['get'], url_path='current-user', detail=False)
+    def get_comments(self, request):
+        c = request.user.post_set.filter(active=True)
+
+        return Response(serializers.CommentSerializer(c, many=True).data)
 

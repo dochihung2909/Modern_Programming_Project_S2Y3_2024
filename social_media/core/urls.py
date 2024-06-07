@@ -7,7 +7,6 @@ router.register('posts', views.PostViewSet, basename='posts')
 router.register('users', views.UserViewSet, basename='users')
 router.register('comments', views.CommentViewSet, basename='comments')
 
-
 urlpatterns = [
     path('', include(router.urls)),
 ]

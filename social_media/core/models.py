@@ -6,7 +6,7 @@ from django.db import models
 class BaseModel(models.Model):
     created_date = models.DateTimeField(auto_now_add=True, null=True)
     updated_date = models.DateTimeField(auto_now=True, null=True)
-    active = models.BooleanField(default=False)
+    active = models.BooleanField(default=True)
 
     class Meta:
         abstract = True
@@ -45,8 +45,8 @@ class Tag(BaseModel):
 class Post(BaseModel):
     content = RichTextField()
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
-    image = models.ImageField(upload_to='images/%Y/%m', null=True)
-    tags = models.ManyToManyField(Tag)
+    image = models.ImageField(upload_to='posts/%Y/%m', null=True)
+    tags = models.ManyToManyField(Tag, blank=True)
 
     def __str__(self):
         return f'{self.user_id} - {self.content[:50] + "..." if len(self.content) > 50 else self.content}'
@@ -59,15 +59,15 @@ class ItemBase(BaseModel):
         abstract = True
 
 
-class Comment(ItemBase):
-    content = models.CharField(max_length=255)
-
-    def __str__(self):
-        return f'{self.user_id} - {self.content[:50]}'
+# class Comment(ItemBase):
+#     content = models.CharField(max_length=255)
+#
+#     def __str__(self):
+#         return f'{self.user_id} - {self.content[:50]}'
 
 
 class Interaction(BaseModel):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
     post = models.ForeignKey(Post, null=True, on_delete=models.CASCADE)
 
     class Meta:
@@ -75,12 +75,15 @@ class Interaction(BaseModel):
 
 
 class Comment(Interaction):
-    content = models.CharField(max_length=255, null=True)
+    content = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f'{self.id} - {self.content[:50]}'
 
 
 class LikeType(BaseModel):
     name = models.CharField(max_length=50)
-    image = models.ImageField(upload_to='like_types/%Y/%m', null=True)
+    image = models.ImageField(upload_to='like_types/%Y/%m', null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -90,8 +93,8 @@ class Like(Interaction):
     active = models.BooleanField(default=True)
     like_type = models.ForeignKey(LikeType, on_delete=models.CASCADE, null=True)
 
-    # class Meta:
-    #     abstract = True
+    class Meta:
+        abstract = True
 
 
 class LikePost(Like):
