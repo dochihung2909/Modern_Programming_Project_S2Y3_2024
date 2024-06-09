@@ -45,30 +45,30 @@ class Tag(BaseModel):
 class Post(BaseModel):
     content = RichTextField()
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
-    image = models.ImageField(upload_to='images/%Y/%m', null=True)
-    tags = models.ManyToManyField(Tag)
+    image = models.ImageField(upload_to='posts/%Y/%m', null=True)
+    tags = models.ManyToManyField(Tag, blank=True)
 
     def __str__(self):
         return f'{self.user_id} - {self.content[:50] + "..." if len(self.content) > 50 else self.content}'
 
 
-# class ItemBase(BaseModel):
-#     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+class ItemBase(BaseModel):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+
+    class Meta:
+        abstract = True
+
+
+# class Comment(ItemBase):
+#     content = models.CharField(max_length=255)
 #
-#     class Meta:
-#         abstract = True
-
-
-class Comment(BaseModel):
-    content = models.CharField(max_length=255)
-
-    # def __str__(self):
-    #     return f'{self.user_id} - {self.content[:50]}'
+#     def __str__(self):
+#         return f'{self.user_id} - {self.content[:50]}'
 
 
 class Interaction(BaseModel):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
-    post = models.ForeignKey(Post, on_delete=models.CASCADE, null=True)
+    user = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, null=True, on_delete=models.CASCADE)
 
     class Meta:
         abstract = True
@@ -77,10 +77,13 @@ class Interaction(BaseModel):
 class Comment(Interaction):
     content = models.CharField(max_length=255)
 
+    def __str__(self):
+        return f'{self.id} - {self.content[:50]}'
+
 
 class LikeType(BaseModel):
     name = models.CharField(max_length=50)
-    image = models.ImageField(upload_to='like_types/%Y/%m', null=True)
+    image = models.ImageField(upload_to='like_types/%Y/%m', null=True, blank=True)
 
     def __str__(self):
         return self.name

@@ -19,18 +19,16 @@ load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY_DJANGO')
+SECRET_KEY = 'django-insecure-_egdt4-%1e(le!)vcq=x&$98z-du4ssehk$nm&ro&$rq&439dl'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
 
 # Application definition
 
@@ -47,6 +45,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_yasg',
     'oauth2_provider',
+    'social_media'
 ]
 
 MIDDLEWARE = [
@@ -79,20 +78,18 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'social_media.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'social_media_db',
+        'NAME': 'social_media_db_test',
         'USER': 'root',
         'PASSWORD': os.getenv('DATABASE_PASS'),
         'HOST': ''  # mặc định localhost
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -112,7 +109,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
@@ -123,7 +119,6 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
@@ -149,12 +144,9 @@ REST_FRAMEWORK = {
     )
 }
 
-CLIENT_ID = 'DFRVzJjA8anyCS1Bz2Ml3USFlON25FNiB7iX3Rvj'
-# 2eD5Boms8AVzsmGCTfaLtXYcTPwbBByhdm9pgVaG
+CLIENT_ID = os.getenv('CLIENT_ID_OAUTH')
 CLIENT_SECRET = os.getenv('CLIENT_SECRET_OAUTH')
-# GYk5ZlzxuqNlSCS6OguEoNYfWyWQDP8Ol3TESDa7QxUqNbfjWWeiXIdoHlYTgqSSO3bMz8IBrJhIiHnwU4tRbc8PYiYPFnGKy14p7Cn3Hfw8foxOjGVtiCzrukUFvNpw
 
-
-OAUTH2_PROVIDER = {
-    'OAUTH2_BACKEND_CLASS': 'oauth2_provider.oauth2_backends.JSONOAuthLibCore'
-}
+# OAUTH2_PROVIDER = {
+#     'OAUTH2_BACKEND_CLASS': 'oauth2_provider.oauth2_backends.JSONOAuthLibCore'
+# }
