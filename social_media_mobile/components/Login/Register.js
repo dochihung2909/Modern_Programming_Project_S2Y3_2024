@@ -3,6 +3,7 @@ import React, {useState, useEffect} from 'react'
 import { HelperText, TextInput, TouchableRipple, Button } from 'react-native-paper';
 import DropDown from 'react-native-paper-dropdown'; 
 import * as ImagePicker from 'expo-image-picker'; 
+import mine from 'mine';
 
 export default Register = () => { 
     const [user, setUser] = useState({})   
@@ -29,23 +30,67 @@ export default Register = () => {
     }
 
     // Post api to server for admin to commit register and send username and password thought email for student
-    const register = () => {
-        console.log("Registering...");
-    }
+    const register = async () => {
+        if (user['password'] !== user['confirm'])
+            setErr(true);
+        else {
+            setErr(false);
 
+            let form = new FormData();
+            for (let key in user)
+                if (key !== 'confirm')
+                    if (key === 'avatar') {
+                        form.append(key, {
+                            uri: user.avatar.uri,
+                            name: user.avatar.fileName,
+                            type: mine(user.avatar.uri)
+                        });
+                    } else
+                        form.append(key, user[key]);
+            
+            console.info(form);
+            setLoading(true);
+            try {
+                let res = await APIs.post(endpoints['register'], form, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+    
+                if (res.status === 201)
+                    nav.navigate("Login");
+            } catch (ex) {
+                console.error(ex);
+            } finally {
+                setLoading(false);
+            }
+        }
+    }
     const fields = [
         {
             "label": "Mã số sinh viên",
             "icon": "text",
             "name": "student_id"
         }, {
-            "label": "Họ và tên",
+            "label": "Họ",
+            "icon": "account",
+            "name": "first_name"
+        }, {
+            "label": "Tên",
+            "icon": "account",
+            "name": "last_name"
+        }, {
+            "label": "Tên đăng nhập",
             "icon": "account",
             "name": "username"
         }, {
-            'label': "Email",
-            'icon': 'email',
-            'name': 'email'
+            'label': "Mật khẩu",
+            'icon': 'eye',
+            'name': 'password'
+        }, {
+            'label': "Nhập lại mật khẩu",
+            'icon': 'eye',
+            'name': 'confirm'
         }]; 
 
     useEffect(() => {

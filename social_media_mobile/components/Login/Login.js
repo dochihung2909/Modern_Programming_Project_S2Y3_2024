@@ -5,9 +5,10 @@ import { HelperText, TextInput , TouchableRipple, Button, Provider } from 'react
 import DropDown from "react-native-paper-dropdown";   
 import { useNavigation } from "@react-navigation/native";
 import { MyDispatchContext } from '../../configs/Contexts';
-import APIs, { endpoints } from '../../configs/APIs'; 
+import APIs, { endpoints, authApi } from '../../configs/APIs'; 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const Login = ({navigation}) => { 
+const Login = () => { 
     const [type, setType] = useState(1) 
     const [user, setUser] = useState({}) 
     const [showDropdown, setShowDropdown]  = useState(false);
@@ -46,26 +47,32 @@ const Login = ({navigation}) => {
     const login = async () => {
         updateSate('type', type) 
         setLoading(true);
-        try {
-            let res = await APIs.post(endpoints['login'], {
-                ...user,
-                'client_id': process.env.CLIENT_ID,
-                'client_secret': process.env.CLIENT_SECRET,
-                'grant_type': 'password'
-            });
-            console.info(res.data);
+        try { 
+            const res = await APIs.post(endpoints['login'],
+                new URLSearchParams({
+                    'grant_type': 'password',
+                    'client_id': 'UDINDnkP5SOSJkmGeVsCEuwjahP4cW2MaPlycf4q',
+                    'client_secret': '5afsukkl3EiTfSyX1q8qJf2ueaKBw7mo7gCRLWG2TOTxsD1du0WJ94aOoOMlQare6ZiuOivPu07B6w0DEh6EZuiioMpuram7SS75jQFSHFsPlHN4eGdjjNu1ZmnHQtYc',
+                    ...user
+                }), 
+                {
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                    }
+                }
+            ); 
 
             await AsyncStorage.setItem("token", res.data.access_token);
+            // console.info(res.data); 
             
             setTimeout(async () => {
-                let user = await authApi(res.data.access_token).get(endpoints['current-user']);
-                console.info(user.data);
+                let user = res 
 
                 dispatch({
                     'type': "login",
                     'payload': user.data
                 })
-
+                console.log('navigate')
                 nav.navigate('Home');
             }, 100);
         } catch (ex) {
