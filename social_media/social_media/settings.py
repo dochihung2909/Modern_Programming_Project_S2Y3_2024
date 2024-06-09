@@ -84,7 +84,7 @@ WSGI_APPLICATION = 'social_media.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'social_media_db_test',
+        'NAME': os.getenv('DATABASE_NAME'),
         'USER': 'root',
         'PASSWORD': os.getenv('DATABASE_PASS'),
         'HOST': ''  # mặc định localhost
@@ -141,7 +141,12 @@ MEDIA_ROOT = '%s/core/static/' % BASE_DIR
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
-    )
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
 }
 
 CLIENT_ID = os.getenv('CLIENT_ID_OAUTH')

@@ -27,7 +27,7 @@ class PostAdmin(admin.ModelAdmin):
 
     class Media:
         css = {
-            'all': ('/static/css/style.css',)
+            'all': ('/static/admin/css/style.css',)
         }
 
     def short_content(self, obj):
@@ -67,12 +67,12 @@ class LikeTypeAdmin(admin.ModelAdmin):
 
 class LikePostAdmin(admin.ModelAdmin):
     list_display = ['id', 'user_id', 'post_id']
-    list_filter = ['user_id', 'post_id']
+    list_filter = ['user_id']
 
 
 class LikeCommentAdmin(admin.ModelAdmin):
     list_display = ['id', 'user_id', 'comment_id']
-    list_filter = ['user_id', 'comment_id']
+    list_filter = ['user_id']
 
     form = LikeCommentAdminForm
 

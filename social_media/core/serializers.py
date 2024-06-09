@@ -78,6 +78,16 @@ class UserSerializer(serializers.ModelSerializer):
 
         return user
 
+    def validate(self, data):
+        if data.get('first_name') == data.get('last_name'):
+            raise serializers.ValidationError("First and last names must be different.")
+        password = data.get('password')
+        if password and len(password) < 8:
+            raise serializers.ValidationError("Password must be at least 8 characters long.")
+        username = data.get('username')
+        if (password and username) and (username in password):
+            raise serializers.ValidationError("Password cannot contain the username.")
+
     class Meta:
         model = User
         fields = ['id', 'first_name', 'last_name', 'email', 'username', 'password', 'role', 'avatar']

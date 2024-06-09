@@ -59,13 +59,6 @@ class ItemBase(BaseModel):
         abstract = True
 
 
-# class Comment(ItemBase):
-#     content = models.CharField(max_length=255)
-#
-#     def __str__(self):
-#         return f'{self.user_id} - {self.content[:50]}'
-
-
 class Interaction(BaseModel):
     user = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
     post = models.ForeignKey(Post, null=True, on_delete=models.CASCADE)
