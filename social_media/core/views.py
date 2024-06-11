@@ -13,7 +13,7 @@ class PostViewSet(viewsets.ViewSet,
                   generics.DestroyAPIView):
     queryset = Post.objects.filter(active=True)
     serializer_class = serializers.PostSerializer
-    permission_classes = [perms.OwnerAuthenticated]
+    permission_classes = [perms.OwnerAuthenticated | perms.IsSuperUser]
 
     def get_queryset(self):
         queryset = self.queryset
@@ -95,7 +95,7 @@ class CommentViewSet(viewsets.ViewSet,
                      generics.RetrieveAPIView):
     queryset = Comment.objects.all()
     serializer_class = serializers.CommentSerializer
-    permission_classes = [perms.OwnerAuthenticated]
+    permission_classes = [perms.OwnerAuthenticated | perms.IsSuperUser]
 
     def get_permissions(self):
         if self.action in ['like']:
