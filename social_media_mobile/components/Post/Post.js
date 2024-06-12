@@ -3,6 +3,7 @@ import { Button, Icon, Paragraph } from 'react-native-paper'
 import React from 'react' 
 
 export default Post = ({post}) => {
+
     return (
         <>
             <View className={('bg-white mb-4 p-4 rounded-lg shadow')}>

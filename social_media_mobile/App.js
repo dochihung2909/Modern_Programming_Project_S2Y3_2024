@@ -11,6 +11,7 @@ import Notification from './components/Notification/Notification';
 import Profile from './components/Profile/Profile'; 
 import {MyUserContext, MyDispatchContext} from './configs/Contexts'
 import {MyUserReducer} from './configs/Reducers'
+import Room from './components/Chat/Room';
  
 
 const Stack = createNativeStackNavigator();
@@ -22,15 +23,20 @@ const MyTab = () => {
   // console.log(user.data)
   return (
     <Tab.Navigator className='w-[10%]'>
-      <Tab.Screen name="Home" component={Home} options={{ title: "Trang chủ", tabBarIcon: () => <Icon size={30} color="blue" source="home" />}} />
-      {!user && 
+      <Tab.Screen name="Home" component={Home} options={{ title: "Trang chủ", tabBarIcon: () => <Icon size={30} color="black" source="home" />}} />
+      {!user ? 
         <>
-          <Tab.Screen name="Login" component={Login} options={{title: "Đăng nhập", tabBarIcon: () => <Icon size={30} color="blue" source="login" />}} />
-          <Tab.Screen name="Register" component={Register} options={{title: "Đăng ký", tabBarIcon: () => <Icon size={30} color="blue" source="login" />}} />
+          <Tab.Screen name="Login" component={Login} options={{title: "Đăng nhập", tabBarIcon: () => <Icon size={30} color="black" source="login" />}} />
+          <Tab.Screen name="Register" component={Register} options={{title: "Đăng ký", tabBarIcon: () => <Icon size={30} color="black" source="login" />}} />
         </>
+        :
+        <>
+          <Tab.Screen name="Notification" component={Notification} options={{tabBarIcon: () => <Icon size={30} color="black" source="bell-outline" />}} /> 
+          <Tab.Screen name="Profile" component={Profile} options={{tabBarIcon: () => <Icon size={30} color="black" source="account" />}} />
+        </> 
       }
-      <Tab.Screen name="Notification" component={Notification} options={{tabBarIcon: () => <Icon size={30} color="blue" source="bell-outline" />}} />
-      <Tab.Screen name="Profile" component={Profile} options={{tabBarIcon: () => <Icon size={30} color="blue" source="account" />}} />
+      <Tab.Screen name="Room" component={Room} options={{tabBarIcon: () => <Icon size={30} color="black" source="chat-outline" />}} />  
+
 
       {/* <>
         <Tab.Screen name="Profile" component={Profile} options={{ title: user.username, tabBarIcon: () => <Icon size={30} color="blue" source="account" />}} />
