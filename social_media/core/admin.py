@@ -1,3 +1,4 @@
+from cloudinary.templatetags import cloudinary
 from django.contrib import admin
 from django.contrib.auth.models import Permission, Group
 from django.db.models import Count
@@ -8,7 +9,7 @@ from django.utils.html import strip_tags
 from django.utils.safestring import mark_safe
 
 from core.forms import PostForm, LikeCommentAdminForm
-from core.models import User, Post, Tag, Comment, LikePost, LikeComment, Role, LikeType
+from core.models import User, Post, Tag, Comment, LikePost, LikeComment, Role, LikeType, Room, Message
 
 
 class PostAdmin(admin.ModelAdmin):
@@ -18,12 +19,10 @@ class PostAdmin(admin.ModelAdmin):
     readonly_fields = ['img']
     form = PostForm
 
-    def img(self, course):
-        if course:
-            return mark_safe(
-                '<img src="/static/{url}" width="120" />' \
-                    .format(url=course.image.name)
-            )
+    def img(self, post):
+        if post.image:
+            return mark_safe(f"<img width='120' height='120' src='{post.image.url}' />")
+        return "No Image"
 
     class Media:
         css = {
@@ -47,6 +46,13 @@ class UserAdmin(admin.ModelAdmin):
     list_display = ['id', 'username']
     list_filter = ['role_id']
     search_fields = ['username']
+
+    readonly_fields = ['avt']
+
+    def avt(self, user):
+        if user.avatar:
+            return mark_safe(f"<img width='120' height='120' src='{user.avatar.url}' />")
+        return "No Image"
 
 
 class CommentAdmin(admin.ModelAdmin):
@@ -96,6 +102,18 @@ class TagAdmin(admin.ModelAdmin):
     list_display = ['id', 'name']
 
 
+class RoomAdmin(admin.ModelAdmin):
+    list_display = ['id', 'title', 'author_id']
+    list_filter = ['author']
+    search_fields = ['title']
+
+
+class MessageAdmin(admin.ModelAdmin):
+    list_display = ['id', 'content', 'user_id', 'room_id']
+    list_filter = ['user_id', 'room_id']
+    search_fields = ['content']
+
+
 class MySocialMediaAdminSite(admin.AdminSite):
     site_header = 'eSocialMedia'
 
@@ -122,6 +140,5 @@ admin_site.register(Comment, CommentAdmin)
 admin_site.register(LikePost, LikePostAdmin)
 admin_site.register(LikeComment, LikeCommentAdmin)
 admin_site.register(LikeType, LikeTypeAdmin)
-
-
-
+admin_site.register(Room, RoomAdmin)
+admin_site.register(Message, MessageAdmin)

@@ -149,9 +149,18 @@ REST_FRAMEWORK = {
     ),
 }
 
+
 CLIENT_ID = os.getenv('CLIENT_ID_OAUTH')
 CLIENT_SECRET = os.getenv('CLIENT_SECRET_OAUTH')
 
 # OAUTH2_PROVIDER = {
 #     'OAUTH2_BACKEND_CLASS': 'oauth2_provider.oauth2_backends.JSONOAuthLibCore'
 # }
+
+import cloudinary
+
+cloudinary.config(
+    cloud_name=os.getenv('NAME_CLOUDINARY'),
+    api_key=os.getenv('KEY_CLOUDINARY'),
+    api_secret=os.getenv('NAME_CLOUDINARY')
+)
