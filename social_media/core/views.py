@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from core import serializers, paginators, perms
-from .models import Post, User, Comment, LikePost, LikeComment
+from .models import Post, User, Comment, LikePost, LikeComment, Room, Message
 
 
 class PostViewSet(viewsets.ViewSet,
@@ -26,7 +26,7 @@ class PostViewSet(viewsets.ViewSet,
             id = self.request.query_params.get('id')
             if id:
                 queryset = queryset.filter(pk=id)
-                queryset = queryset.filter(pk=id)
+
         return queryset
 
     def get_permissions(self):
@@ -67,16 +67,36 @@ class PostViewSet(viewsets.ViewSet,
 
 
 class UserViewSet(viewsets.ViewSet,
-                  generics.CreateAPIView,):
+                  generics.CreateAPIView):
     queryset = User.objects.filter(is_active=True)
     serializer_class = serializers.UserSerializer
     parser_classes = [MultiPartParser, ]
 
+    def get_queryset(self):
+        queryset = self.queryset
+
+        if self.action.__eq__('list'):
+            id = self.request.query_params.get('id')
+            if id:
+                queryset = queryset.filter(pk=id)
+                queryset = queryset.filter(pk=id)
+        return queryset
+
     def get_permissions(self):
-        if self.action.__eq__('current-user'):
+        if self.action in ['current-user', 'list']:
             return [permissions.IsAuthenticated()]
 
         return [permissions.AllowAny()]
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        if request.user.is_superuser:
+            serializer = self.get_serializer(queryset, many=True)
+        else:
+            serializer = serializers.UserCustomSerializer(queryset, many=True)
+
+        return Response(serializer.data)
 
     @action(methods=['get', 'patch'], url_path='current-user', detail=False)
     def get_current_user(self, request):
@@ -92,7 +112,8 @@ class UserViewSet(viewsets.ViewSet,
 class CommentViewSet(viewsets.ViewSet,
                      generics.DestroyAPIView,
                      generics.UpdateAPIView,
-                     generics.RetrieveAPIView):
+                     generics.RetrieveAPIView,
+                     generics.ListAPIView):
     queryset = Comment.objects.all()
     serializer_class = serializers.CommentSerializer
     permission_classes = [perms.OwnerAuthenticated | perms.IsSuperUser]
@@ -117,7 +138,44 @@ class CommentViewSet(viewsets.ViewSet,
 
     @action(methods=['get'], url_path='current-user', detail=False)
     def get_comments(self, request):
-        c = request.user.post_set.filter(active=True)
+        c = request.user.comment_set.filter(active=True)
 
         return Response(serializers.CommentSerializer(c, many=True).data)
+
+
+class RoomViewSet(viewsets.ViewSet,
+                  generics.ListAPIView,
+                  generics.RetrieveAPIView,
+                  generics.DestroyAPIView,
+                  generics.UpdateAPIView):
+    queryset = Room.objects.filter(active=True)
+    serializer_class = serializers.RoomSerializer
+    permission_classes = [perms.OwnerAuthenticated | perms.IsSuperUser]
+
+    def get_queryset(self):
+        queryset = self.queryset
+        if self.action.__eq__('list'):
+            id = self.request.query_params.get('id')
+            if id:
+                queryset = queryset.filter(pk=id)
+        return queryset
+
+    def get_permissions(self):
+        if self.action in ['add_message']:
+            return [permissions.IsAuthenticated()]
+
+        return [permission() for permission in self.permission_classes]
+
+    @action(methods=['post'], detail=True, url_path='messages')
+    def add_message(self, request, pk):
+        m = self.get_object().message_set.create(content=request.data.get('title'),
+                                                 user=request.user)
+        return Response(serializers.MessageSerializer(m).data,
+                        status=status.HTTP_201_CREATED)
+
+
+
+
+
+
 

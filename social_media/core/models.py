@@ -1,4 +1,5 @@
 from ckeditor.fields import RichTextField
+from cloudinary.models import CloudinaryField
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
@@ -21,7 +22,7 @@ class Role(BaseModel):
 
 
 class User(AbstractUser):
-    avatar = models.ImageField(upload_to='users/%Y/%m', null=True)
+    avatar = CloudinaryField(null=False)
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True)
 
     def __str__(self):
@@ -45,7 +46,7 @@ class Tag(BaseModel):
 class Post(BaseModel):
     content = RichTextField()
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
-    image = models.ImageField(upload_to='posts/%Y/%m', null=True)
+    image = CloudinaryField(null=False)
     tags = models.ManyToManyField(Tag, blank=True)
 
     def __str__(self):
@@ -100,3 +101,17 @@ class LikeComment(Like):
 
     class Meta:
         unique_together = ('user', 'comment', 'like_type')
+
+
+class Room(BaseModel):
+    title = models.CharField(max_length=50)
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='author_room')
+
+    def __str__(self):
+        return self.title
+
+
+class Message(BaseModel):
+    content = RichTextField()
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    room = models.ForeignKey(Room, on_delete=models.CASCADE)

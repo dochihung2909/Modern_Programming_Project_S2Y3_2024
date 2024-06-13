@@ -12,25 +12,35 @@ def create_initial_data(apps, schema_editor):
         password='123'
     )
     User.objects.create_user(first_name='John', last_name='Doe', username='johndoe', password='123',
-                        email='john@example.com', role_id=random.choice(role_ids))
+                            email='john@example.com', role_id=random.choice(role_ids),
+                             avatar='https://res.cloudinary.com/dhitdivyi/image/upload/v1718214638/ouxuet2p190h3i6kbz3q.png')
     User.objects.create_user(first_name='Jane', last_name='Smith', username='janesmith', password='123',
-                        email='jane@example.com', role_id=random.choice(role_ids))
+                        email='jane@example.com', role_id=random.choice(role_ids),
+                             avatar='https://res.cloudinary.com/dhitdivyi/image/upload/v1718214638/ouxuet2p190h3i6kbz3q.png')
     User.objects.create_user(first_name='Alice', last_name='Johnson', username='alicej', password='123',
-                        email='alice@example.com', role_id=random.choice(role_ids))
+                        email='alice@example.com', role_id=random.choice(role_ids),
+                             avatar='https://res.cloudinary.com/dhitdivyi/image/upload/v1718214638/ouxuet2p190h3i6kbz3q.png')
     User.objects.create_user(first_name='Admin', last_name='User', username='adminfake', password='123',
-                        email='admin@example.com', role_id=random.choice(role_ids))
+                        email='admin@example.com', role_id=random.choice(role_ids),
+                             avatar='https://res.cloudinary.com/dhitdivyi/image/upload/v1718214638/ouxuet2p190h3i6kbz3q.png')
     User.objects.create_user(first_name='Robert', last_name='Anderson', username='rob_anderson', password='123',
-                        email='robert@example.com', role_id=random.choice(role_ids))
+                        email='robert@example.com', role_id=random.choice(role_ids),
+                             avatar='https://res.cloudinary.com/dhitdivyi/image/upload/v1718214638/ouxuet2p190h3i6kbz3q.png')
     User.objects.create_user(first_name='Elizabeth', last_name='Johnson-Smith', username='lizjsmith', password='123',
-                        email='elizabeth@example.com', role_id=random.choice(role_ids))
+                        email='elizabeth@example.com', role_id=random.choice(role_ids),
+                             avatar='https://res.cloudinary.com/dhitdivyi/image/upload/v1718214638/ouxuet2p190h3i6kbz3q.png')
     User.objects.create_user(first_name='Sam', last_name='O\'Connor', username='sam-oconnor', password='123',
-                        email='sam@example.com', role_id=random.choice(role_ids))
+                        email='sam@example.com', role_id=random.choice(role_ids),
+                             avatar='https://res.cloudinary.com/dhitdivyi/image/upload/v1718214638/ouxuet2p190h3i6kbz3q.png')
     User.objects.create_user(first_name='Emily', last_name='Taylor', username='emilytaylor', password='123',
-                        email='emily.taylor@example.com', role_id=random.choice(role_ids))
+                        email='emily.taylor@example.com', role_id=random.choice(role_ids),
+                             avatar='https://res.cloudinary.com/dhitdivyi/image/upload/v1718214638/ouxuet2p190h3i6kbz3q.png')
     User.objects.create_user(first_name='Michael', last_name='Brown', username='mikebrown', password='123',
-                        email='michael@example.com', role_id=random.choice(role_ids))
+                        email='michael@example.com', role_id=random.choice(role_ids),
+                             avatar='https://res.cloudinary.com/dhitdivyi/image/upload/v1718214638/ouxuet2p190h3i6kbz3q.png')
     User.objects.create_user(first_name='', last_name='Smith', username='user123', password='123', email='user@example.com',
-                        role_id=random.choice(role_ids))
+                        role_id=random.choice(role_ids),
+                             avatar='https://res.cloudinary.com/dhitdivyi/image/upload/v1718214638/ouxuet2p190h3i6kbz3q.png')
 
 
 class Migration(migrations.Migration):

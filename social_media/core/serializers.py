@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Post, Tag, User, Comment, Like, LikePost, LikeComment
+from .models import Post, Tag, User, Comment, Room
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -8,33 +8,21 @@ class TagSerializer(serializers.ModelSerializer):
         fields = ['id', 'name']
 
 
-class BaseSerializer(serializers.ModelSerializer):
-    image = serializers.SerializerMethodField(source='image')
-    tags = TagSerializer(many=True)
-
-    def get_image(self, post):
-        if post.image:
-            request = self.context.get('request')
-            if request:
-                return request.build_absolute_uri('/static/%s' % post.image.name)
-            return '/static/%s' % post.image.name
-
-
 class PostSerializer(serializers.ModelSerializer):
-    # image = serializers.SerializerMethodField(source='image')
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        rep['image'] = instance.image.url
 
-    # def to_representation(self, instance):
-    #     rep = super().to_representation(instance)
-    #     rep['image'] = instance.image.url
-    #
-    #     return rep
+        return rep
 
     def get_image(self, post):
         if post.image:
             request = self.context.get('request')
+            rep = super().to_representation(post)
+            rep['image'] = post.image.url
             if request:
-                return request.build_absolute_uri('/static/%s' % post.image.name)
-            return '/static/%s' % post.image.name
+                return request.build_absolute_uri(rep)
+            return rep
 
     class Meta:
         model = Post
@@ -63,11 +51,20 @@ class AuthenticatedPostDetailsSerializer(PostDetailsSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    # def to_representation(self, instance):
-    #     rep = super().to_representation(instance)
-    #     rep['avatar'] = instance.avatar.url
-    #
-    #     return rep
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        rep['avatar'] = instance.avatar.url
+
+        return rep
+
+    def get_avatar(self, user):
+        if user.avatar:
+            request = self.context.get('request')
+            rep = super().to_representation(user)
+            rep['avatar'] = user.avatar.url
+            if request:
+                return request.build_absolute_uri(rep)
+            return rep
 
     def create(self, validated_data):
         data = validated_data.copy()
@@ -87,6 +84,7 @@ class UserSerializer(serializers.ModelSerializer):
         username = data.get('username')
         if (password and username) and (username in password):
             raise serializers.ValidationError("Password cannot contain the username.")
+        return data
 
     class Meta:
         model = User
@@ -98,12 +96,18 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
 
+class UserCustomSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username', 'avatar']
+
+
 class CommentSerializer(serializers.ModelSerializer):
     user = UserSerializer()
 
     class Meta:
         model = Comment
-        fields = ['id', 'content', 'user']
+        fields = ['id', 'content', 'post_id', 'user']
 
 
 class AuthenticatedCommentSerializer(CommentSerializer):
@@ -118,4 +122,9 @@ class AuthenticatedCommentSerializer(CommentSerializer):
         model = CommentSerializer.Meta.model
         fields = CommentSerializer.Meta.fields + ['liked']
 
+
+class RoomSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Room
+        fields = ['id', 'title']
 
