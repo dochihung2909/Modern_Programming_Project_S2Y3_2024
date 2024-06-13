@@ -66,7 +66,8 @@ const Login = () => {
             // console.info(res.data); 
             
             setTimeout(async () => {
-                let user = res 
+                let user = await authApi(res.data.access_token).get(endpoints['current_user']);
+                console.info(user.data);
 
                 dispatch({
                     'type': "login",

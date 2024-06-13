@@ -8,10 +8,7 @@ const Message = ({ message }) => {
      
 
     const isSentByCurrentUser = message.senderId === 'currentUserId'; // Giả định người dùng hiện tại có id là 'currentUserId'
-    
-    console.log(message.image?.width, message.image?.height)
-   
- 
+      
 
     return (
         <View className={`flex-row my-2 ${isSentByCurrentUser ? 'justify-end' : 'justify-start'}`}>

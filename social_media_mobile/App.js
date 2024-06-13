@@ -19,8 +19,7 @@ const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 const MyTab = () => {
-  const user = useContext(MyUserContext); 
-  // console.log(user.data)
+  const user = useContext(MyUserContext);  
   return (
     <Tab.Navigator className='w-[10%]'>
       <Tab.Screen name="Home" component={Home} options={{ title: "Trang chủ", tabBarIcon: () => <Icon size={30} color="black" source="home" />}} />
@@ -32,9 +31,9 @@ const MyTab = () => {
         :
         <>
           <Tab.Screen name="Notification" component={Notification} options={{tabBarIcon: () => <Icon size={30} color="black" source="bell-outline" />}} /> 
-          <Tab.Screen name="Profile" component={Profile} options={{tabBarIcon: () => <Icon size={30} color="black" source="account" />}} />
         </> 
       }
+      <Tab.Screen name="Profile" component={Profile} options={{tabBarIcon: () => <Icon size={30} color="black" source="account" />}} />
       <Tab.Screen name="Room" component={Room} options={{tabBarIcon: () => <Icon size={30} color="black" source="chat-outline" />}} />  
 
 

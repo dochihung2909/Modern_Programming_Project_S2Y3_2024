@@ -7,6 +7,7 @@ export const endpoints = {
     'login': '/o/token/',
     'current_user': '/users/current-user/',
     'posts': '/posts/',
+    'users_id': (id) => `/users/?id=${id}`
 }
 
 export const authApi = (token) => {

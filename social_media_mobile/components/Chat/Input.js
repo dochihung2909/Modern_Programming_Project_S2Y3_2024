@@ -15,7 +15,7 @@ const Input = ({ onSend, onPress }) => {
       }
     }; 
 
-      const picker = async () => {
+    const picker = async () => {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted')
             Alert.alert("iCourseApp", "Permissions Denied!");
