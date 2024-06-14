@@ -1,16 +1,16 @@
+from django.http import Http404
 from rest_framework import viewsets, permissions, generics, serializers, status, parsers
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from core import serializers, paginators, perms
-from .models import Post, User, Comment, LikePost, LikeComment, Room, Message
+from .models import Post, User, Comment, LikePost, LikeComment, Room, Message, JoinRoom
 
 
 class PostViewSet(viewsets.ViewSet,
                   generics.ListAPIView,
                   generics.RetrieveAPIView,
-                  generics.UpdateAPIView,
-                  generics.DestroyAPIView):
+                  generics.UpdateAPIView):
     queryset = Post.objects.filter(active=True)
     serializer_class = serializers.PostSerializer
     permission_classes = [perms.OwnerAuthenticated | perms.IsSuperUser]
@@ -22,10 +22,6 @@ class PostViewSet(viewsets.ViewSet,
             q = self.request.query_params.get('q')
             if q:
                 queryset = queryset.filter(content__icontains=q)
-
-            id = self.request.query_params.get('id')
-            if id:
-                queryset = queryset.filter(pk=id)
 
         return queryset
 
@@ -65,28 +61,44 @@ class PostViewSet(viewsets.ViewSet,
         return Response(serializers.AuthenticatedPostDetailsSerializer(self.get_object(), context={'request': request}).data,
                         status=status.HTTP_200_OK)
 
+    @action(methods=['get'], url_path='current-user', detail=False)
+    def get_posts(self, request):
+        p = request.user.post_set.filter(active=True)
+
+        return Response(serializers.PostDetailsSerializer(p, many=True).data)
+
 
 class UserViewSet(viewsets.ViewSet,
-                  generics.CreateAPIView):
+                  generics.CreateAPIView,
+                  generics.RetrieveAPIView):
     queryset = User.objects.filter(is_active=True)
     serializer_class = serializers.UserSerializer
     parser_classes = [MultiPartParser, ]
 
-    def get_queryset(self):
-        queryset = self.queryset
-
-        if self.action.__eq__('list'):
-            id = self.request.query_params.get('id')
-            if id:
-                queryset = queryset.filter(pk=id)
-                queryset = queryset.filter(pk=id)
-        return queryset
+    # def get_queryset(self):
+    #     queryset = self.queryset
+    #
+    #     if self.action.__eq__('list'):
+    #         id = self.request.query_params.get('id')
+    #         if id:
+    #             queryset = queryset.filter(pk=id)
+    #             queryset = queryset.filter(pk=id)
+    #     return queryset
 
     def get_permissions(self):
-        if self.action in ['current-user', 'list']:
+        if self.action in ['current-user', 'list', 'retrieve']:
             return [permissions.IsAuthenticated()]
-
         return [permissions.AllowAny()]
+
+    def get_serializer_class(self):
+        if self.request.user.is_superuser:
+            return serializers.UserSerializer
+        return serializers.UserCustomSerializer
+
+    def get_queryset(self):
+        if self.request.user.is_superuser:
+            return User.objects.all()
+        return User.objects.filter(is_active=True)
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -110,11 +122,10 @@ class UserViewSet(viewsets.ViewSet,
 
 
 class CommentViewSet(viewsets.ViewSet,
-                     generics.DestroyAPIView,
                      generics.UpdateAPIView,
                      generics.RetrieveAPIView,
                      generics.ListAPIView):
-    queryset = Comment.objects.all()
+    queryset = Comment.objects.filter(active=True)
     serializer_class = serializers.CommentSerializer
     permission_classes = [perms.OwnerAuthenticated | perms.IsSuperUser]
 
@@ -145,37 +156,73 @@ class CommentViewSet(viewsets.ViewSet,
 
 class RoomViewSet(viewsets.ViewSet,
                   generics.ListAPIView,
-                  generics.RetrieveAPIView,
-                  generics.DestroyAPIView,
-                  generics.UpdateAPIView):
+                  generics.UpdateAPIView,
+                  generics.RetrieveAPIView):
     queryset = Room.objects.filter(active=True)
     serializer_class = serializers.RoomSerializer
     permission_classes = [perms.OwnerAuthenticated | perms.IsSuperUser]
 
-    def get_queryset(self):
-        queryset = self.queryset
-        if self.action.__eq__('list'):
-            id = self.request.query_params.get('id')
-            if id:
-                queryset = queryset.filter(pk=id)
-        return queryset
-
     def get_permissions(self):
-        if self.action in ['add_message']:
+        if self.action in ['add_message', 'add_room', 'get_messages']:
             return [permissions.IsAuthenticated()]
 
         return [permission() for permission in self.permission_classes]
 
-    @action(methods=['post'], detail=True, url_path='messages')
-    def add_message(self, request, pk):
-        m = self.get_object().message_set.create(content=request.data.get('title'),
-                                                 user=request.user)
-        return Response(serializers.MessageSerializer(m).data,
+    def get_object(self):
+        return Room.objects.get(pk=self.kwargs['pk'])
+
+    @action(methods=['get', 'post'], detail=True, url_path='messages')
+    def get_messages(self, request, pk):
+        room = self.get_object()
+
+        if request.method == 'GET':
+            m = room.message_set.filter(active=True)
+            return Response(serializers.MessageSerializer(m, many=True).data)
+
+        elif request.method == 'POST':
+            m = self.get_object().message_set.create(content=request.data.get('content'),
+                                                     user=request.user)
+            return Response(serializers.MessageSerializer(m).data,
+                            status=status.HTTP_201_CREATED)
+
+    @action(methods=['post'], detail=False, url_path='add_room')
+    def add_room(self, request):
+        r = Room.objects.create(title=request.data.get('title'))
+        return Response(serializers.RoomSerializer(r).data,
                         status=status.HTTP_201_CREATED)
 
-
-
-
-
-
-
+    @action(methods=['post'], detail=True, url_path='add_user')
+    def add_user_to_room(self, request, pk):
+        try:
+            room = self.get_object()
+            user_id = request.data.get('user_id')
+            if not user_id:
+                return Response(
+                    {'error': 'user_id is required'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            user = User.objects.get(id=user_id)
+            if JoinRoom.objects.filter(user=user, room=room).exists():
+                return Response(
+                    {'error': 'User is already in the room'}
+                )
+            room.add_user(user)
+            return Response(
+                {'message': 'User added to room successfully'},
+                status=status.HTTP_200_OK
+            )
+        except Room.DoesNotExist:
+            return Response(
+                {'error': 'Room not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except User.DoesNotExist:
+            return Response(
+                {'error': 'User not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except ValueError as e:
+            return Response(
+                {'error': {str(e)}},
+                status=status.HTTP_400_BAD_REQUEST
+            )

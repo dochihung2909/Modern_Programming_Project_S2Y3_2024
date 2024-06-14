@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Post, Tag, User, Comment, Room
+from .models import Post, Tag, User, Comment, Room, Message
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -99,7 +99,7 @@ class UserSerializer(serializers.ModelSerializer):
 class UserCustomSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'avatar']
+        fields = ['first_name', 'last_name', 'username', 'avatar', 'role']
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -126,5 +126,11 @@ class AuthenticatedCommentSerializer(CommentSerializer):
 class RoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
-        fields = ['id', 'title']
+        fields = ['id', 'title', 'room_type']
+
+
+class MessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Message
+        fields = ['id', 'content', 'user_id', 'room_id']
 

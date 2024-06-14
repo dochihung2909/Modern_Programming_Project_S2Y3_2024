@@ -104,14 +104,34 @@ class LikeComment(Like):
 
 
 class Room(BaseModel):
+    ROOM_TYPE_CHOICES = [
+        ('individual', 'Individual'),
+        ('group', 'Group'),
+    ]
     title = models.CharField(max_length=50)
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='author_room')
+    room_type = models.CharField(max_length=15, choices=ROOM_TYPE_CHOICES, default='individual')
 
     def __str__(self):
         return self.title
+
+    def add_user(self, user):
+        if self.room_type == 'individual' and self.joinroom_set.count() >= 2:
+            raise ValueError("Individual room can only have 2 users")
+        JoinRoom.objects.create(room=self, user=user)
 
 
 class Message(BaseModel):
     content = RichTextField()
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     room = models.ForeignKey(Room, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.user} - {self.room} - {self.content[:50]}"
+
+
+class JoinRoom(BaseModel):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    room = models.ForeignKey(Room, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.user.username} in {self.room.title}"
