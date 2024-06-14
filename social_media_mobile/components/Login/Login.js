@@ -17,6 +17,10 @@ const Login = () => {
     const dispatch = useContext(MyDispatchContext);
     const nav = useNavigation();
 
+    const client_id = process.env.CLIENT_ID 
+    const client_secret = process.env.CLIENT_SECRET
+
+
     const typeList = [ 
         {
             'label': 'Cựu sinh viên',
@@ -51,8 +55,8 @@ const Login = () => {
             const res = await APIs.post(endpoints['login'],
                 new URLSearchParams({
                     'grant_type': 'password',
-                    'client_id': 'UDINDnkP5SOSJkmGeVsCEuwjahP4cW2MaPlycf4q',
-                    'client_secret': '5afsukkl3EiTfSyX1q8qJf2ueaKBw7mo7gCRLWG2TOTxsD1du0WJ94aOoOMlQare6ZiuOivPu07B6w0DEh6EZuiioMpuram7SS75jQFSHFsPlHN4eGdjjNu1ZmnHQtYc',
+                    'client_id': client_id,
+                    'client_secret': client_secret,
                     ...user
                 }), 
                 {
@@ -61,6 +65,7 @@ const Login = () => {
                     }
                 }
             ); 
+            console.info(user)
 
             await AsyncStorage.setItem("token", res.data.access_token);
             // console.info(res.data); 

@@ -3,7 +3,8 @@ import React, {useState, useEffect} from 'react'
 import { HelperText, TextInput, TouchableRipple, Button } from 'react-native-paper';
 import DropDown from 'react-native-paper-dropdown'; 
 import * as ImagePicker from 'expo-image-picker'; 
-import mine from 'mine';
+import mime from 'mime';
+import APIs, { endpoints } from '../../configs/APIs';
 
 export default Register = () => { 
     const [user, setUser] = useState({})   
@@ -39,11 +40,11 @@ export default Register = () => {
             let form = new FormData();
             for (let key in user)
                 if (key !== 'confirm')
-                    if (key === 'avatar') {
+                    if (key === 'avatar') {  
                         form.append(key, {
                             uri: user.avatar.uri,
                             name: user.avatar.fileName,
-                            type: mine(user.avatar.uri)
+                            type: mime.getType(user.avatar.uri)
                         });
                     } else
                         form.append(key, user[key]);
@@ -56,7 +57,7 @@ export default Register = () => {
                         'Content-Type': 'multipart/form-data'
                     }
                 });
-    
+                console.info(res)
                 if (res.status === 201)
                     nav.navigate("Login");
             } catch (ex) {
@@ -80,21 +81,28 @@ export default Register = () => {
             "icon": "account",
             "name": "last_name"
         }, {
+            "label": "Email",
+            "icon": "mail",
+            "name": "email"
+        },
+        {
             "label": "Tên đăng nhập",
             "icon": "account",
             "name": "username"
         }, {
             'label': "Mật khẩu",
             'icon': 'eye',
-            'name': 'password'
+            'name': 'password',
+            'secureTextEntry': true
         }, {
             'label': "Nhập lại mật khẩu",
             'icon': 'eye',
-            'name': 'confirm'
+            'name': 'confirm',
+            'secureTextEntry': true
         }]; 
 
     useEffect(() => {
-        console.log(user)
+        // console.log(user)
     }, [user])
 
     return (

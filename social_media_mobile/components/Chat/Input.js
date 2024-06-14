@@ -4,7 +4,7 @@ import { TextInput } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import * as ImagePicker from 'expo-image-picker';
 
-const Input = ({ onSend, onPress }) => {
+const Input = ({ onSend, onPress, loading }) => {
     const [message, setMessage] = useState('');
 
     const handleSend = () => {
@@ -41,7 +41,7 @@ const Input = ({ onSend, onPress }) => {
                 className="flex-1 p-2 border border-gray-300 rounded-lg"
                 onFocus={onPress}
             />
-            <TouchableOpacity onPress={handleSend} className="ml-2 p-2 bg-blue-500 rounded-lg">
+            <TouchableOpacity loading={loading} onPress={handleSend} className="ml-2 p-2 bg-blue-500 rounded-lg">
                 <Text className="text-white">Send</Text>
             </TouchableOpacity>
         </View>

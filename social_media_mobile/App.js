@@ -31,11 +31,11 @@ const MyTab = () => {
         :
         <>
           <Tab.Screen name="Notification" component={Notification} options={{tabBarIcon: () => <Icon size={30} color="black" source="bell-outline" />}} /> 
+          <Tab.Screen name="Profile" component={Profile} options={{tabBarIcon: () => <Icon size={30} color="black" source="account" />}} />
+          <Tab.Screen name="Room" children={() => <Room id={1}></Room>} options={{tabBarIcon: () => <Icon size={30} color="black" source="chat-outline" />}} />  
         </> 
       }
-      <Tab.Screen name="Profile" component={Profile} options={{tabBarIcon: () => <Icon size={30} color="black" source="account" />}} />
-      <Tab.Screen name="Room" component={Room} options={{tabBarIcon: () => <Icon size={30} color="black" source="chat-outline" />}} />  
-
+      
 
       {/* <>
         <Tab.Screen name="Profile" component={Profile} options={{ title: user.username, tabBarIcon: () => <Icon size={30} color="blue" source="account" />}} />

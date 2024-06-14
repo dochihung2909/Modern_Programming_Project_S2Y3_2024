@@ -7,7 +7,9 @@ export const endpoints = {
     'login': '/o/token/',
     'current_user': '/users/current-user/',
     'posts': '/posts/',
-    'users_id': (id) => `/users/?id=${id}`
+    'users_id': (id) => `/users/?id=${id}`,
+    'get_messages': (id) => `/rooms/${id}/messages/`,
+    'add_messages': (id) => `/rooms/${id}/messages/`
 }
 
 export const authApi = (token) => {
