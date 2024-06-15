@@ -1,8 +1,17 @@
 import { Linking, Text, View, Image, TouchableOpacity } from 'react-native'
 import { Button, Icon, Paragraph } from 'react-native-paper'
-import React from 'react' 
+import React, {useState} from 'react' 
+import Comment from './Comment'; 
+import LikeButton from './LikeButton';
 
-export default Post = ({post}) => {
+export default Post = ({post}) => { 
+    const [showComments, setShowComments] = useState(false);
+     
+    
+
+    const toggleComments = () => {
+        setShowComments(!showComments);
+    };
 
     return (
         <>
@@ -16,19 +25,19 @@ export default Post = ({post}) => {
                     <Image source={{ uri: post.image }} className={('w-full h-48 rounded-lg mb-4')} />
                 )}
                 <View className={('flex-row justify-around border-t border-gray-200 pt-2')}>
-                    <TouchableOpacity className={('flex-row items-center')}>
-                    <Icon name="thumbs-up" size={20} color="#000" />
-                    <Text className={('ml-2 text-base')}>Like</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity className={('flex-row items-center')}>
-                    <Icon name="comment" size={20} color="#000" />
-                    <Text className={('ml-2 text-base')}>Comment</Text>
+                    <View className={('items-center')}>
+                        <LikeButton></LikeButton>
+                    </View>
+                    <TouchableOpacity onPress={toggleComments} className={('flex-row items-center')}>
+                        <Icon name="comment" size={20} color="#000" />
+                        <Text className={('ml-2 text-base')}>Comment</Text>
                     </TouchableOpacity>
                     <TouchableOpacity className={('flex-row items-center')}>
                     <Icon name="share" size={20} color="#000" />
                     <Text className={('ml-2 text-base')}>Share</Text>
                     </TouchableOpacity>
                 </View>
+                {showComments && <Comment postId={post.id} />}
             </View>
         </>
     )

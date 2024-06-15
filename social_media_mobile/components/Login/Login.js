@@ -68,7 +68,7 @@ const Login = () => {
             console.info(user)
 
             await AsyncStorage.setItem("token", res.data.access_token);
-            // console.info(res.data); 
+            console.info(res.data.access_token); 
             
             setTimeout(async () => {
                 let user = await authApi(res.data.access_token).get(endpoints['current_user']);

@@ -22,13 +22,11 @@ export default function Profile({id}) {
   }
 
   useEffect(() => { 
-    (isFocused && user != null) && loadPosts() 
-    console.log(posts) 
+    (isFocused && user != null) && loadPosts()  
   }, [isFocused])
 
   useEffect(() => {
-    (user == null) && setPosts([])
-    console.log(posts) 
+    (user == null) && setPosts([]) 
   }, [user])
 
   const [refreshing, setRefreshing] = useState(false);
@@ -53,7 +51,7 @@ export default function Profile({id}) {
   useEffect(() => {
     getUserInfo()  
   }, [])
-
+ 
   const handleAddFriend = async () => {
     // Post request to add friend
   }

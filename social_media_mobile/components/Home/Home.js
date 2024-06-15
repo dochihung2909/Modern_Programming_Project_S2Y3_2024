@@ -11,7 +11,8 @@ export default function Home() {
   const isFocused = useIsFocused(); 
   const [posts, setPosts] = useState([]) 
   const loadPosts = async () => {
-    const posts = await authApi(user?.access_token).get(endpoints['posts']);   
+    const access_token = await AsyncStorage.getItem('token')
+    const posts = await authApi(access_token).get(endpoints['posts']);   
     setPosts(posts.data)  
   }
 
@@ -19,12 +20,10 @@ export default function Home() {
 
   useEffect(() => { 
     (isFocused && user != null) && loadPosts() 
-    console.log(posts) 
   }, [isFocused])
 
   useEffect(() => {
     (user == null) && setPosts([])
-    console.log(posts) 
   }, [user])
 
   const [refreshing, setRefreshing] = React.useState(false);
@@ -38,7 +37,7 @@ export default function Home() {
 
   return (
     <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
-      {posts.map(post => <Post post={post}></Post>)} 
+      {posts.map(post => <Post key={post.id} post={post}></Post>)} 
     </ScrollView>
   )
 }
