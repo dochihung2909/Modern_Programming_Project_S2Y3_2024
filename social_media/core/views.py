@@ -1,9 +1,19 @@
+from django.contrib import messages
+from django.core.files.storage import default_storage
 from django.http import Http404
+from django.shortcuts import render, redirect
+from firebase_admin import auth
+from pyrebase import pyrebase
 from rest_framework import viewsets, permissions, generics, serializers, status, parsers
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
+
 from core import serializers, paginators, perms
+from social_media.authentication import FirebaseAuthentication
 from .models import Post, User, Comment, LikePost, LikeComment, Room, Message, JoinRoom
 
 
@@ -226,3 +236,79 @@ class RoomViewSet(viewsets.ViewSet,
                 {'error': {str(e)}},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+# class JoinRoomViewSet(viewsets.ViewSet,
+#                       generics.ListAPIView):
+#     queryset = JoinRoom.objects.filter(active=True)
+#     serializer_class =  = JoinRoomSerializer
+
+
+
+def index(request):
+    return render(request, 'social_media.html', {})
+
+
+# Web app's Firebase configuration
+config = {
+    "apiKey": "AIzaSyDRly06IjCgkL0lcEP3hWpIecUyym1YbZE",
+    "authDomain": "social-media-b2def.firebaseapp.com",
+    "databaseURL": "https://social-media-b2def-default-rtdb.firebaseio.com",
+    "projectId": "social-media-b2def",
+    "storageBucket": "social-media-b2def.appspot.com",
+    "messagingSenderId": "634240436590",
+    "appId": "1:634240436590:web:691f9e91008112a012197f",
+    "measurementId": "G-85V1MXGXQF"
+}
+
+# Initialise the Firebase connection and storage
+firebase = pyrebase.initialize_app(config)
+storage = firebase.storage()
+
+# Configure file upload to Firebase Cloud Storage
+# storage = firebase.storage()
+# storage.child(PATH/DIRECTORY_ON_CLOUD).put(PATH_TO_LOCAL_IMAGE  )
+
+
+# def main(request):
+#     if request.method == 'POST':
+#         file = request.FILES['file']
+#         file_save = default_storage.save(file.name, file)
+#         storage.child("files/" + file.name).put("media/" + file.name)
+#         delete = default_storage.delete(file.name)
+#         messages.success(request, "File upload in Firebase Storage successful")
+#         return redirect('main')
+#     else:
+#         return render(request, 'main.html')
+
+
+class ProtectedView(APIView):
+    authentication_classes = [FirebaseAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        content = {'message': 'This is a protected view'}
+        return Response(content)
+
+
+class FirebaseLoginView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        jwt_token = self.get_jwt_token_for_user(user)
+        firebase_token = self.get_firebase_token(jwt_token)
+
+        return Response({'firebase_token': firebase_token})
+
+    def get_jwt_token_for_user(self, user):
+        refresh = RefreshToken.for_user(user)
+        return str(refresh.access_token)
+
+    def get_firebase_token(self, jwt_token):
+        try:
+            decoded_token = auth.verify_id_token(jwt_token)
+            uid = decoded_token['uid']
+            custom_token = auth.create_custom_token(uid)
+            return custom_token.decode('utf-8')
+        except Exception as e:
+            return str(e)

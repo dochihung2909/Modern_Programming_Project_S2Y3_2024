@@ -9,10 +9,13 @@ https://docs.djangoproject.com/en/5.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
-
+from datetime import timedelta
 from pathlib import Path
 import os
+
+import firebase_admin
 from dotenv import load_dotenv
+from firebase_admin import credentials
 
 # Load environment variables from .env file
 load_dotenv()
@@ -45,7 +48,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_yasg',
     'oauth2_provider',
-    'social_media'
+    'social_media',
+    'rest_framework_simplejwt',
 ]
 
 MIDDLEWARE = [
@@ -123,7 +127,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'access/static')]
 
 CKEDITOR_UPLOAD_PATH = "ckeditors/images/"
 
@@ -143,6 +149,7 @@ REST_FRAMEWORK = {
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
@@ -164,3 +171,12 @@ cloudinary.config(
     api_key=os.getenv('KEY_CLOUDINARY'),
     api_secret=os.getenv('SECRET_CLOUDINARY')
 )
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+}
+
+FIREBASE_CONFIG_FILE = 'social-media-b2def-firebase-adminsdk-lyr7i-c45d8d39f7.json'
+cred = credentials.Certificate(FIREBASE_CONFIG_FILE)
+firebase_admin.initialize_app(cred)

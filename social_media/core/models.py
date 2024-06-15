@@ -135,3 +135,13 @@ class JoinRoom(BaseModel):
 
     def __str__(self):
         return f"{self.user.username} in {self.room.title}"
+
+
+class Survey(BaseModel):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+
+class Question(BaseModel):
+    text = models.CharField(max_length=255)
+    choice = models.IntegerField()
+

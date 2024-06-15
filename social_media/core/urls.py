@@ -11,4 +11,5 @@ router.register('rooms', views.RoomViewSet, basename='rooms')
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('firebase/', views.index, name='index'),
 ]
