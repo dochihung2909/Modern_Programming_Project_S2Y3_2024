@@ -1,8 +1,10 @@
-import { View, Text } from 'react-native'
+import { View, Text, StyleSheet, Image } from 'react-native'
 import React, {useState} from 'react' 
 import ReactionButton from '@luu-truong/react-native-reaction-button'
+import EStyleSheet from 'react-native-extended-stylesheet';
+import { Icon } from 'react-native-paper';
 
-const LikeButton = () => {
+const LikeButton = ({textStyle, imageStyle, icon}) => {
 
     const [value, setValue] = React.useState(-1);
 
@@ -12,10 +14,10 @@ const LikeButton = () => {
 
     // handle like
 
-    const reactions = [
+    const reactions = [ 
         {
           source: {
-            uri: 'https://w7.pngwing.com/pngs/260/468/png-transparent-facebook-reaction-like-hd-logo-thumbnail.png'
+            uri: 'https://res.cloudinary.com/dhitdivyi/image/upload/v1718543691/micejv2cjaahjgsxhvnr.png'
           },
           title: 'Like'
         },
@@ -56,9 +58,13 @@ const LikeButton = () => {
         }
       ];
   return (
-    <ReactionButton reactions={reactions} defaultIndex={0} value={value} onChange={onChange} />
+    <View className={'flex-row items-center justify-center'}>
+      {value == -1 &&  icon && <Image className={'w-[20px] h-[20px] mr-[-10px]'} source={{uri: 'https://cdn-icons-png.flaticon.com/512/58/58746.png'}} /> }
+      <ReactionButton imageProps={{style: imageStyle}} textProps={{style: textStyle}} reactions={reactions} defaultIndex={0} value={value} onChange={onChange} /> 
+    </View>
+    
 
   )
-}
+} 
 
-export default LikeButton
+export default LikeButton 

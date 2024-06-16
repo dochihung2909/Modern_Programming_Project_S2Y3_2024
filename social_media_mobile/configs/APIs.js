@@ -13,6 +13,12 @@ export const endpoints = {
     'rooms': '/rooms/', 
     'room_id': (id) => `/rooms/${id}`,
     'comments': '/comments/',
+    'posts_comments': (id) => `/posts/${id}/comments/`,
+    'current_user_posts': '/posts/current-user/',
+    'add_post': '/posts/add_post/',
+    'add_comment': (id) => `/posts/${id}/comments/`,
+    'user_rooms': '/users/current-user/rooms/',
+    'delete_post': (id) => `/posts/${id}/`
 }
 
 export const authApi = (token) => {

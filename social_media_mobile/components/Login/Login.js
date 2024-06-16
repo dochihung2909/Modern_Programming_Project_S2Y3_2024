@@ -1,7 +1,7 @@
-import { KeyboardAvoidingView, ScrollView, Text , View, Image, Platform, Pressable } from 'react-native'
+import { KeyboardAvoidingView, ScrollView, Text , View, Image, Platform, Pressable, TouchableOpacity } from 'react-native'
 import React from 'react'
 import { useState, useEffect, useContext } from 'react'
-import { HelperText, TextInput , TouchableRipple, Button, Provider } from 'react-native-paper'  
+import { HelperText, TextInput, TouchableRipple, Button, Provider } from 'react-native-paper'  
 import DropDown from "react-native-paper-dropdown";   
 import { useNavigation } from "@react-navigation/native";
 import { MyDispatchContext } from '../../configs/Contexts';
@@ -79,7 +79,7 @@ const Login = () => {
                     'payload': user.data
                 })
                 console.log('navigate')
-                nav.navigate('Home');
+                nav.navigate('MyTab');
             }, 100);
         } catch (ex) {
             console.error(ex);
@@ -139,6 +139,16 @@ const Login = () => {
                 </HelperText> 
 
                 <Button className='text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800' icon="account" loading={loading} mode="contained" onPress={login}>ĐĂNG NHẬP</Button>
+                <View className={'flex-row items-center'}>
+                     <Text className={'pr-2 text-base'}>Đăng ký tài khoản cựu sinh viên?</Text>
+                     <TouchableOpacity className={'text-base font-light text-gray-500 dark:text-gray-400'}  onPress={() => nav.navigate('Register')}>
+                        <Text className='underline font-medium text-blue-600'>
+                            Đăng ký
+                        </Text>
+                    </TouchableOpacity>
+
+                </View>
+                
             </ScrollView>
         </KeyboardAvoidingView> 
             
