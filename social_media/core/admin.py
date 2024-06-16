@@ -69,10 +69,16 @@ class CommentAdmin(admin.ModelAdmin):
 
 class LikeTypeAdmin(admin.ModelAdmin):
     list_display = ['id', 'name']
+    readonly_fields = ['img']
+
+    def img(self, liketype):
+        if liketype.image:
+            return mark_safe(f"<img width='120' height='120' src='{liketype.image.url}' />")
+        return "No Image"
 
 
 class LikePostAdmin(admin.ModelAdmin):
-    list_display = ['id', 'user_id', 'post_id']
+    list_display = ['id', 'user_id', 'post_id', 'like_type']
     list_filter = ['user_id']
 
 

@@ -50,57 +50,56 @@ class Post(BaseModel):
     tags = models.ManyToManyField(Tag, blank=True)
 
     def __str__(self):
-        return f'{self.user_id} - {self.content[:50] + "..." if len(self.content) > 50 else self.content}'
+        # return f'{self.user_id} - {self.content[:50] + "..." if len(self.content) > 50 else self.content}'
+        return f'{self.id} - {self.content[:50]}'
 
 
-class ItemBase(BaseModel):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+# class Interaction(BaseModel):
+#     user = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
+#     post = models.ForeignKey(Post, null=True, on_delete=models.CASCADE)
+#
+#     class Meta:
+#         abstract = True
 
-    class Meta:
-        abstract = True
 
-
-class Interaction(BaseModel):
+class Comment(BaseModel):
+    content = models.CharField(max_length=255)
     user = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
     post = models.ForeignKey(Post, null=True, on_delete=models.CASCADE)
-
-    class Meta:
-        abstract = True
-
-
-class Comment(Interaction):
-    content = models.CharField(max_length=255)
 
     def __str__(self):
         return f'{self.id} - {self.content[:50]}'
 
 
 class LikeType(BaseModel):
-    name = models.CharField(max_length=50)
-    image = models.ImageField(upload_to='like_types/%Y/%m', null=True, blank=True)
+    id = models.PositiveIntegerField(primary_key=True)
+    name = models.CharField(max_length=50, unique=True)
+    image = CloudinaryField(null=False)
 
     def __str__(self):
         return self.name
 
 
-class Like(Interaction):
-    active = models.BooleanField(default=True)
-    like_type = models.ForeignKey(LikeType, on_delete=models.CASCADE, null=True)
+class Like(BaseModel):
+    like_type = models.ForeignKey(LikeType, on_delete=models.CASCADE, null=False)
+    user = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
 
     class Meta:
         abstract = True
 
 
 class LikePost(Like):
+    post = models.ForeignKey(Post, null=True, on_delete=models.CASCADE)
+
     class Meta:
-        unique_together = ('user', 'post', 'like_type')
+        unique_together = ('user', 'post')
 
 
 class LikeComment(Like):
     comment = models.ForeignKey(Comment, on_delete=models.CASCADE, null=True)
 
     class Meta:
-        unique_together = ('user', 'comment', 'like_type')
+        unique_together = ('user', 'comment')
 
 
 class Room(BaseModel):
