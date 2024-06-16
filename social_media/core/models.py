@@ -135,3 +135,6 @@ class JoinRoom(BaseModel):
 
     def __str__(self):
         return f"{self.user.username} in {self.room.title}"
+
+    class Meta:
+        unique_together = ('user', 'room')
