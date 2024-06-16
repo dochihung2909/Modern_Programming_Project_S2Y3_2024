@@ -1,10 +1,9 @@
-from django.http import Http404
 from rest_framework import viewsets, permissions, generics, serializers, status, parsers
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from core import serializers, paginators, perms
-from .models import Post, User, Comment, LikePost, LikeComment, Room, Message, JoinRoom
+from .models import Post, User, Comment, LikePost, LikeComment, Room, JoinRoom
 
 
 class PostViewSet(viewsets.ViewSet,
@@ -14,6 +13,7 @@ class PostViewSet(viewsets.ViewSet,
     queryset = Post.objects.filter(active=True)
     serializer_class = serializers.PostSerializer
     permission_classes = [perms.OwnerAuthenticated | perms.IsSuperUser]
+    pagination_class = paginators.PostPaginator
 
     def get_queryset(self):
         queryset = self.queryset
@@ -44,12 +44,39 @@ class PostViewSet(viewsets.ViewSet,
         return Response(serializers.PostSerializer(p).data,
                         status=status.HTTP_201_CREATED)
 
-    @action(methods=['post'], url_path='comments', detail=True)
-    def add_comment(self, request, pk):
-        c = self.get_object().comment_set.create(content=request.data.get('content'),
-                                                 user=request.user)
-        return Response(serializers.CommentSerializer(c).data,
-                        status=status.HTTP_201_CREATED)
+    # @action(methods=['post'], url_path='comments', detail=True)
+    # def add_comment(self, request, pk):
+    #     c = self.get_object().comment_set.create(content=request.data.get('content'),
+    #                                              user=request.user)
+    #     return Response(serializers.CommentSerializer(c).data,
+    #                     status=status.HTTP_201_CREATED)
+    #
+    # @action(methods=['get'], url_path='comments', detail=True)
+    # def get_comment(self, request, pk):
+    #     c = self.get_object().comment_set.filter(active=True)
+    #     return Response(serializers.CommentSerializer(c, many=True).data)
+
+    @action(methods=['post', 'get'], detail=True, url_path='comments')
+    def manage_comments(self, request, pk):
+        post = self.get_object()
+
+        if request.method == 'POST':
+            content = request.data.get('content')
+            if not content:
+                return Response({"detail": "Content is required."},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+            c = Comment.objects.create(post=post,
+                                       content=content,
+                                       user=request.user)
+            return Response(serializers.CommentSerializer(c).data,
+                            status=status.HTTP_201_CREATED)
+
+        elif request.method == 'GET':
+            c = post.comment_set.all()
+            serializer = serializers.CommentSerializer(c, many=True)
+            return Response(serializer.data,
+                            status=status.HTTP_200_OK)
 
     @action(methods=['post'], url_path='like', detail=True)
     def like(self, request, pk):
@@ -74,16 +101,6 @@ class UserViewSet(viewsets.ViewSet,
     queryset = User.objects.filter(is_active=True)
     serializer_class = serializers.UserSerializer
     parser_classes = [MultiPartParser, ]
-
-    # def get_queryset(self):
-    #     queryset = self.queryset
-    #
-    #     if self.action.__eq__('list'):
-    #         id = self.request.query_params.get('id')
-    #         if id:
-    #             queryset = queryset.filter(pk=id)
-    #             queryset = queryset.filter(pk=id)
-    #     return queryset
 
     def get_permissions(self):
         if self.action in ['current-user', 'list', 'retrieve']:
@@ -120,6 +137,13 @@ class UserViewSet(viewsets.ViewSet,
 
         return Response(serializers.UserSerializer(user).data)
 
+    @action(methods=['get'], url_path='current-user/rooms', detail=False)
+    def get_rooms(self, request):
+        user = request.user
+        rooms = JoinRoom.objects.filter(user=user)
+        serializer = serializers.JoinRoomSerializer(rooms, many=True)
+        return Response(serializer.data)
+
 
 class CommentViewSet(viewsets.ViewSet,
                      generics.UpdateAPIView,
@@ -128,6 +152,7 @@ class CommentViewSet(viewsets.ViewSet,
     queryset = Comment.objects.filter(active=True)
     serializer_class = serializers.CommentSerializer
     permission_classes = [perms.OwnerAuthenticated | perms.IsSuperUser]
+    pagination_class = paginators.CommentPaginator
 
     def get_permissions(self):
         if self.action in ['like']:
@@ -161,6 +186,7 @@ class RoomViewSet(viewsets.ViewSet,
     queryset = Room.objects.filter(active=True)
     serializer_class = serializers.RoomSerializer
     permission_classes = [perms.OwnerAuthenticated | perms.IsSuperUser]
+    pagination_class = paginators.RoomPaginator
 
     def get_permissions(self):
         if self.action in ['add_message', 'add_room', 'get_messages']:
@@ -226,3 +252,5 @@ class RoomViewSet(viewsets.ViewSet,
                 {'error': {str(e)}},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+
