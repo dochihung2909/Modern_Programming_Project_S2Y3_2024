@@ -3,13 +3,12 @@ from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from core import serializers, paginators, perms
-from .models import Post, User, Comment, LikePost, LikeComment, Room, JoinRoom
+from .models import Post, User, Comment, LikePost, LikeComment, Room, JoinRoom, LikeType
 
 
 class PostViewSet(viewsets.ViewSet,
                   generics.ListAPIView,
-                  generics.RetrieveAPIView,
-                  generics.UpdateAPIView):
+                  generics.RetrieveAPIView):
     queryset = Post.objects.filter(active=True)
     serializer_class = serializers.PostSerializer
     permission_classes = [perms.OwnerAuthenticated | perms.IsSuperUser]
@@ -26,8 +25,10 @@ class PostViewSet(viewsets.ViewSet,
         return queryset
 
     def get_permissions(self):
-        if self.action in ['add_post', 'add_comment']:
+        if self.action in ['add_post', 'add_comment', 'like', 'manage_comments', 'get_like']:
             return [permissions.IsAuthenticated()]
+        if self.action in ['delete_post']:
+            return [perms.OwnerAuthenticated()]
 
         return [permission() for permission in self.permission_classes]
 
@@ -43,18 +44,6 @@ class PostViewSet(viewsets.ViewSet,
                                 image=request.data.get('image'))
         return Response(serializers.PostSerializer(p).data,
                         status=status.HTTP_201_CREATED)
-
-    # @action(methods=['post'], url_path='comments', detail=True)
-    # def add_comment(self, request, pk):
-    #     c = self.get_object().comment_set.create(content=request.data.get('content'),
-    #                                              user=request.user)
-    #     return Response(serializers.CommentSerializer(c).data,
-    #                     status=status.HTTP_201_CREATED)
-    #
-    # @action(methods=['get'], url_path='comments', detail=True)
-    # def get_comment(self, request, pk):
-    #     c = self.get_object().comment_set.filter(active=True)
-    #     return Response(serializers.CommentSerializer(c, many=True).data)
 
     @action(methods=['post', 'get'], detail=True, url_path='comments')
     def manage_comments(self, request, pk):
@@ -79,20 +68,53 @@ class PostViewSet(viewsets.ViewSet,
                             status=status.HTTP_200_OK)
 
     @action(methods=['post'], url_path='like', detail=True)
-    def like(self, request, pk):
-        like, created = LikePost.objects.get_or_create(user=request.user,
-                                                       post=self.get_object())
+    def like(self, request, pk=None):
+        user = request.user
+        post = self.get_object()
+        like_type_id = request.data.get('like_type_id')
+
+        if not like_type_id:
+            return Response({'error': 'like_type_id is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            like_type = LikeType.objects.get(id=like_type_id)
+        except LikeType.DoesNotExist:
+            return Response({'error': 'Invalid like_type_id.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        like, created = LikePost.objects.get_or_create(user=user, post=post, like_type=like_type)
         if not created:
             like.active = not like.active
             like.save()
-        return Response(serializers.AuthenticatedPostDetailsSerializer(self.get_object(), context={'request': request}).data,
-                        status=status.HTTP_200_OK)
+            if not like.active:
+                like.delete()
+
+        response_data = serializers.AuthenticatedPostDetailsSerializer(self.get_object(), context={'request': request}).data
+
+        return Response(response_data, status=status.HTTP_200_OK)
 
     @action(methods=['get'], url_path='current-user', detail=False)
     def get_posts(self, request):
         p = request.user.post_set.filter(active=True)
 
         return Response(serializers.PostDetailsSerializer(p, many=True).data)
+
+    @action(methods=['get'], url_path='likes', detail=True)
+    def get_like(self, request, pk):
+        l = self.get_object().likepost_set.filter(active=True)
+        return Response(serializers.LikePostSerializer(l, many=True).data)
+
+    @action(methods=['patch'], detail=True, permission_classes=[perms.OwnerAuthenticated])
+    def delete(self, request, pk):
+        try:
+            post = self.get_object()
+            post.active = False
+            post.save()
+            return Response({'status': 'Post deactivated'})
+        except Post.DoesNotExist:
+            return Response(
+                {'error': 'Post not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
 
 class UserViewSet(viewsets.ViewSet,
@@ -178,6 +200,19 @@ class CommentViewSet(viewsets.ViewSet,
 
         return Response(serializers.CommentSerializer(c, many=True).data)
 
+    @action(methods=['patch'], detail=True, permission_classes=[perms.OwnerAuthenticated])
+    def delete(self, request, pk):
+        try:
+            comment = self.get_object()
+            comment.active = False
+            comment.save()
+            return Response({'status': 'Comment deactivated'})
+        except Comment.DoesNotExist:
+            return Response(
+                {'error': 'Comment not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
 
 class RoomViewSet(viewsets.ViewSet,
                   generics.ListAPIView,
@@ -196,20 +231,6 @@ class RoomViewSet(viewsets.ViewSet,
 
     def get_object(self):
         return Room.objects.get(pk=self.kwargs['pk'])
-
-    @action(methods=['get', 'post'], detail=True, url_path='messages')
-    def get_messages(self, request, pk):
-        room = self.get_object()
-
-        if request.method == 'GET':
-            m = room.message_set.filter(active=True)
-            return Response(serializers.MessageSerializer(m, many=True).data)
-
-        elif request.method == 'POST':
-            m = self.get_object().message_set.create(content=request.data.get('content'),
-                                                     user=request.user)
-            return Response(serializers.MessageSerializer(m).data,
-                            status=status.HTTP_201_CREATED)
 
     @action(methods=['post'], detail=False, url_path='add_room')
     def add_room(self, request):
