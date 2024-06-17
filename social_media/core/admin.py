@@ -83,7 +83,7 @@ class LikePostAdmin(admin.ModelAdmin):
 
 
 class LikeCommentAdmin(admin.ModelAdmin):
-    list_display = ['id', 'user_id', 'comment_id']
+    list_display = ['id', 'user_id', 'comment_id', 'like_type']
     list_filter = ['user_id']
 
     form = LikeCommentAdminForm

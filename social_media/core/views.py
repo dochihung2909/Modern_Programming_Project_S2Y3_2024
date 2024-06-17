@@ -25,7 +25,7 @@ class PostViewSet(viewsets.ViewSet,
         return queryset
 
     def get_permissions(self):
-        if self.action in ['add_post', 'add_comment', 'like', 'manage_comments', 'get_like']:
+        if self.action in ['add_post', 'add_comment', 'like', 'manage_comments', 'get_like', 'retrieve']:
             return [permissions.IsAuthenticated()]
         if self.action in ['delete_post']:
             return [perms.OwnerAuthenticated()]
@@ -62,7 +62,7 @@ class PostViewSet(viewsets.ViewSet,
                             status=status.HTTP_201_CREATED)
 
         elif request.method == 'GET':
-            c = post.comment_set.all()
+            c = post.comment_set.filter(active=True)
             serializer = serializers.CommentSerializer(c, many=True)
             return Response(serializer.data,
                             status=status.HTTP_200_OK)
@@ -81,15 +81,24 @@ class PostViewSet(viewsets.ViewSet,
         except LikeType.DoesNotExist:
             return Response({'error': 'Invalid like_type_id.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        like, created = LikePost.objects.get_or_create(user=user, post=post, like_type=like_type)
-        if not created:
-            like.active = not like.active
-            like.save()
-            if not like.active:
-                like.delete()
+        liked = LikePost.objects.filter(user=user, post=post).first()
 
-        response_data = serializers.AuthenticatedPostDetailsSerializer(self.get_object(), context={'request': request}).data
+        if liked:
+            if liked.like_type == like_type:
+                liked.active = not liked.active
+                if not liked.active:
+                    liked.delete()
+                else:
+                    liked.save()
+            else:
+                liked.like_type = like_type
+                liked.active = True
+                liked.save()
+        else:
+            LikePost.objects.create(user=user, post=post, like_type=like_type, active=True)
 
+        response_data = serializers.AuthenticatedPostDetailsSerializer(self.get_object(),
+                                                                       context={'request': request}).data
         return Response(response_data, status=status.HTTP_200_OK)
 
     @action(methods=['get'], url_path='current-user', detail=False)
@@ -182,17 +191,51 @@ class CommentViewSet(viewsets.ViewSet,
 
         return [permission() for permission in self.permission_classes]
 
+    # @action(methods=['post'], url_path='like', detail=True)
+    # def like(self, request, pk):
+    #     c = self.get_object()
+    #     like, created = LikeComment.objects.get_or_create(user=request.user,
+    #                                                       comment=c)
+    #     if not created:
+    #         like.active = not like.active
+    #         like.save()
+    #     return Response(
+    #         serializers.AuthenticatedCommentSerializer(c, context={'request': request}).data,
+    #         status=status.HTTP_200_OK)
+
     @action(methods=['post'], url_path='like', detail=True)
-    def like(self, request, pk):
+    def like(self, request, pk=None):
+        user = request.user
         c = self.get_object()
-        like, created = LikeComment.objects.get_or_create(user=request.user,
-                                                          comment=c)
-        if not created:
-            like.active = not like.active
-            like.save()
-        return Response(
-            serializers.AuthenticatedCommentSerializer(c, context={'request': request}).data,
-            status=status.HTTP_200_OK)
+        like_type_id = request.data.get('like_type_id')
+
+        if not like_type_id:
+            return Response({'error': 'like_type_id is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            like_type = LikeType.objects.get(id=like_type_id)
+        except LikeType.DoesNotExist:
+            return Response({'error': 'Invalid like_type_id.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        liked = LikeComment.objects.filter(user=user, comment=c).first()
+
+        if liked:
+            if liked.like_type == like_type:
+                liked.active = not liked.active
+                if not liked.active:
+                    liked.delete()
+                else:
+                    liked.save()
+            else:
+                liked.like_type = like_type
+                liked.active = True
+                liked.save()
+        else:
+            LikeComment.objects.create(user=user, comment=c, like_type=like_type, active=True)
+
+        response_data = serializers.AuthenticatedCommentSerializer(self.get_object(),
+                                                                   context={'request': request}).data
+        return Response(response_data, status=status.HTTP_200_OK)
 
     @action(methods=['get'], url_path='current-user', detail=False)
     def get_comments(self, request):
@@ -275,3 +318,11 @@ class RoomViewSet(viewsets.ViewSet,
             )
 
 
+class LikeTypeViewSet(viewsets.ViewSet):
+    queryset = LikeType.objects.filter(active=True)
+    serializer_class = serializers.LikeTypeSerializer
+
+    @action(methods=['get'], url_path='', detail=False)
+    def get_like_type(self, request):
+        lt = LikeType.objects.filter(active=True)
+        return Response(serializers.LikeTypeSerializer(lt, many=True).data)
