@@ -5,12 +5,19 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authApi, endpoints } from '../../configs/APIs';
 import LikeButton from './LikeButton';
 import { Button, Icon } from 'react-native-paper';
-import { format, formatDistanceToNow, parseISO } from 'date-fns';
+import DropdownMenu from './DropdownMenu';
+import { formatDate } from '../../dao';
+import AlertModal from '../Modal/AlertModal'; 
+import InputComment from './InputComment';
+import { useFocusEffect } from '@react-navigation/native';
 
-const Comment = ({ postId }) => {
+const Comment = ({ postId, navigation }) => {
     const user = useContext(MyUserContext)  
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState('');  
+
+    const [showDelModal, setShowDelModal] = useState(false)
+    const [commentId, setCommentId] = useState('')
 
     const [loading, setLoading] = useState(false)
     const [isUserComment, setIsUserComment] = useState({
@@ -18,18 +25,11 @@ const Comment = ({ postId }) => {
       user: null
     })
 
-    const formatDate = (dateString) => {
-      const date = parseISO(dateString);
-      const now = new Date();
-    
-      // Nếu bài viết trong vòng 24 giờ
-      if (now - date < 24 * 60 * 60 * 1000) {
-        return formatDistanceToNow(date, { addSuffix: true });
-      }
-    
-      // Nếu bài viết lâu hơn 24 giờ
-      return format(date, 'PPPpp'); // Sử dụng 'PPPpp' để định dạng ngày giờ đầy đủ (tùy chỉnh lại theo nhu cầu)
-    };
+    useFocusEffect(
+      React.useCallback(() => {
+        loadComments();
+      }, [])
+    );
 
     const loadComments = async () => {
         const access_token = await AsyncStorage.getItem('token')
@@ -80,6 +80,44 @@ const Comment = ({ postId }) => {
       //   }) 
       //   inputRef.current.focus()
       // }
+
+      const handleEditComment = async (comment, commentUser) => {
+          console.log(comment)       
+          navigation.navigate('UpdateInputComment', {
+            comment: comment,
+            commentUser: commentUser 
+          })   
+          loadComments()
+      }
+
+      const handleDeleteComment = async () => {
+          const access_token = await AsyncStorage.getItem('token') 
+          const res = await authApi(access_token).patch(endpoints['delete_comment'](commentId)) 
+          console.log(res.data.status)
+          loadComments()
+      }
+
+      const handleHideComment = async (commentId) => {
+          console.log(commentId)
+      } 
+
+
+      const handleShowConfirmDelComment = (commentId) => {
+        console.log(commentId)
+        setCommentId(commentId)
+        setShowDelModal(true)
+      }
+
+      // Navigate to Profile user screen when user click to another user
+      const handleNavigateUser = (userId) => { 
+        if (user.id != userId) {
+            navigation.navigate('User_Profile', {
+                userId: userId
+            })
+        } else {
+            navigation.navigate('Profile')
+        } 
+      }
  
 
   return (
@@ -87,42 +125,40 @@ const Comment = ({ postId }) => {
         <View>
             {comments.map(comment => ( 
               <View key={comment.id} className="mb-2 flex">
-                  <View className={('flex-row items-center mb-4')}>
-                      <Image source={{ uri: comment.user.avatar || 'https://img.freepik.com/free-psd/3d-illustration-person-with-sunglasses_23-2149436188.jpg' }} className={('w-10 h-10 rounded-full mr-4')} />
-                      <Text className={('font-bold text-lg')}>{`${comment.user.first_name} ${comment.user.last_name} `}</Text>
-                  </View> 
+                  <View  className={('flex-row justify-between')}>
+                    <TouchableOpacity onPress={() => handleNavigateUser(comment.user.id)} className={('flex-row items-center mb-4')}>
+                        <Image source={{ uri: comment.user.avatar || 'https://img.freepik.com/free-psd/3d-illustration-person-with-sunglasses_23-2149436188.jpg' }} className={('w-10 h-10 rounded-full mr-4')} />
+                        <Text className={('font-bold text-lg')}>{`${comment.user.first_name} ${comment.user.last_name} `}</Text>
+                    </TouchableOpacity> 
+                    {comment.user.id == user.id && 
+                      <DropdownMenu
+                          isComment
+                          onEdit={() => handleEditComment(comment, comment.user)}
+                          onDelete={() => handleShowConfirmDelComment(comment.id)}
+                          onHide={() => handleHideComment(comment.id)}
+                      ></DropdownMenu>
+                    }
+                    
+                  </View>
+                  
                   <Text>{comment.content}</Text>
                   <View className={`flex-row items-left`}>
                     <View className={('flex-row justify-center items-center')}> 
                       <Text className={('text-gray-500')}>{formatDate(comment.created_date)}</Text>
                     </View>
                     <View className={('flex-row justify-center items-center')}>
-                          <LikeButton textStyle={styles.text}></LikeButton>
+                          <LikeButton isCurrentLiked={-1} endpoint={endpoints['like_comment'](comment.id)} textStyle={styles.text}></LikeButton>
                     </View>
-                    <TouchableOpacity onPress={''} className={('flex-row justify-center items-center')}> 
-                        <Text className={('text-gray-500')}>Comment</Text>
+                    <TouchableOpacity onPress={() => {console.log('eidt comment')}} className={('flex-row justify-center items-center')}> 
+                        <Text className={('text-gray-500')}>Bình luận</Text>
                     </TouchableOpacity>
                   </View>  
               </View>
             ))}
         </View>  
-      <View className="flex-row items-center mt-4 border-t border-gray-200 pt-4">
-        <TextInput
-          ref={inputRef}
-          className={('flex-1 bg-gray-100 p-2 rounded-lg border border-gray-300')} 
-          onChangeText={setNewComment}
-          value={newComment}
-          placeholder="Write a comment..."
-        > 
-        </TextInput>
-        <Button
-          loading={loading}
-          onPress={handleAddComment}
-          className={('ml-2 bg-blue-500 p-2 rounded-lg')}
-        >
-          <Text className="text-white">Post</Text>
-        </Button>
-      </View>
+      <InputComment user={user} setNewComment={setNewComment} newComment={newComment} handleAddComment={handleAddComment} loading={loading} ></InputComment> 
+      <AlertModal isModalVisible={showDelModal} setIsModalVisible={setShowDelModal} handleConfirm={handleDeleteComment} alertMessage={'Hành động này sẽ xoá vĩnh viễn bình luận của bạn. Bạn có muốn tiếp tục?'} confirmMessage={'Xoá'} cancelMessage={'Huỷ'}></AlertModal> 
+
     </View>
   )
 }

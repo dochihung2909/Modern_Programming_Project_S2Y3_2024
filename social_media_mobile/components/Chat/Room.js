@@ -21,11 +21,11 @@ import { auth, database } from '../../configs/firebase';
 import { GiftedChat } from 'react-native-gifted-chat'; 
 
 const Room = ({ route, navigation }) => { 
-    const {id} = route.params
+    const {id, targetUser } = route.params
     const user = useContext(MyUserContext)   
     const isFocused = useIsFocused(); 
     const [loading, setLoading] = useState(false);
-
+    console.log(user.avatar)
     const [messages, setMessages] = useState([]);
 
       // const loadMessage = async () => { 
@@ -89,9 +89,9 @@ const Room = ({ route, navigation }) => {
         console.log(messages)
         addDoc(collection(database, 'chats'), {   
           _id,
-          text,
+          text,  
           user,
-          createdAt,
+          createdAt, 
           room_id: id
         })
       }, []);
@@ -137,9 +137,9 @@ const Room = ({ route, navigation }) => {
         onSend={messages => handleSend(messages)}
         user={{
           _id: user.id,
-          avatar: user?.avatar || 'https://i.pravatar.cc/300', 
+          avatar: user.avatar, 
         }} 
-      />
+      /> 
     )
 }
 

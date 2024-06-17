@@ -9,7 +9,7 @@ import Home from './components/Home/Home';
 import { ActivityIndicator, Icon } from 'react-native-paper';
 import Notification from './components/Notification/Notification';
 import Profile from './components/Profile/Profile'; 
-import {MyUserContext, MyDispatchContext, AuthenticatedUserContext, AuthenticatedUserProvider} from './configs/Contexts'
+import {MyUserContext, MyDispatchContext, AuthenticatedUserContext, AuthenticatedUserProvider, ReactionProvider} from './configs/Contexts'
 import {MyUserReducer} from './configs/Reducers'
 import Room from './components/Chat/Room';
 import Chat from './components/Chat/Chat'; 
@@ -18,7 +18,8 @@ import { auth } from './configs/firebase';
 import { MenuProvider } from 'react-native-popup-menu';
 import InputPost from './components/Post/InputPost'; 
 import DetailPost from './components/Post/DetailPost';
- 
+import UpdateInputComment from './components/Post/UpdateInputComment';  
+import RoomHeaderCustom from './components/Chat/RoomHeaderCustom';
 
 const Stack = createNativeStackNavigator();
 
@@ -30,12 +31,15 @@ const MyTab = () => {
   const user = useContext(MyUserContext);   
   
   return (
-    <Tab.Navigator className='w-[10%]'>
+    <Tab.Navigator className='w-[10%]' 
+      screenOptions={{ 
+          tabBarShowLabel: false,
+      }}>
       {user && 
         <>
-          <Tab.Screen name="Home" component={Home} options={{ title: "Trang chủ", tabBarIcon: () => <Icon size={30} color="black" source="home" />}} /> 
+          <Tab.Screen name="Home" component={Home} options={{ title: "Trang chủ", tabBarIcon: () => <Icon size={30} color="black" source="home-outline" />}} /> 
           <Tab.Screen name="Notification" component={Notification} options={{tabBarIcon: () => <Icon size={30} color="black" source="bell-outline" />}} /> 
-          <Tab.Screen name="Profile" component={Profile} options={{tabBarIcon: () => <Icon size={30} color="black" source="account" />}} />
+          <Tab.Screen name="Profile" component={Profile} options={{title: "Hồ sơ", tabBarIcon: () => <Icon size={30} color="black" source="account-outline" />}} />
           <Tab.Screen name="Chat" component={Chat} options={{tabBarIcon: () => <Icon size={30} color="black" source="chat-outline" />}} />   
         </> 
       } 
@@ -46,31 +50,38 @@ const MyTab = () => {
 
 const MyStack = () => {
   return (
-    <Stack.Navigator>
-      <Stack.Screen name="Login" component={Login} options={{title: 'Đăng nhập'}} ></Stack.Screen> 
+    <Stack.Navigator defaultNavigationOptions={{headerTitleAlign: 'center'}}>
+      <Stack.Screen name="Login" component={Login} options={{title: 'Đăng nhập', headerTitleAlign: 'center'}} ></Stack.Screen> 
       <Stack.Screen name="Register" component={Register} ></Stack.Screen>
       <Stack.Screen
         name="MyTab"
         component={MyTab} 
         options={{ headerShown: false }}
       />  
-      <Stack.Screen name='Room' component={Room} />   
-      <Stack.Screen name='User Profile' component={Profile} />  
-      <Stack.Screen name='InputPost' component={InputPost} options={{title: 'Tạo bài viết'}}/>   
-      <Stack.Screen name='DetailPost' component={DetailPost} options={{title: 'Bài viết'}}/>  
+      <Stack.Screen name='Room' component={Room} options={{
+        // header: ({ options, navigation, route }) => <RoomHeaderCustom route={route} navigation={navigation}/> ,
+        title: 'Nhắn tin',
+        headerTitleAlign: 'center'
+      }} />   
+      <Stack.Screen name='User_Profile' component={Profile} />  
+      <Stack.Screen name='InputPost' component={InputPost} options={{title: 'Tạo bài viết', headerTitleAlign: 'center'}}/>   
+      <Stack.Screen name='DetailPost' component={DetailPost} options={{title: 'Bài viết', headerTitleAlign: 'center'}}/>  
+      <Stack.Screen name='UpdateInputComment' component={UpdateInputComment} options={{title: 'Sửa bình luận', headerTitleAlign: 'center'}}/>   
     </Stack.Navigator>
   )
 }
 
 export default function App() {
   const [user, dispatch] = useReducer(MyUserReducer, null);
-  console.log(user?.access_token)
+  console.log(user)
   return (
     <MenuProvider> 
         <NavigationContainer>
           <MyUserContext.Provider value={user}>
-            <MyDispatchContext.Provider value={dispatch}> 
+            <MyDispatchContext.Provider value={dispatch}>
+              <ReactionProvider> 
                 <MyStack></MyStack>  
+              </ReactionProvider> 
             </MyDispatchContext.Provider>
           </MyUserContext.Provider>
         </NavigationContainer>

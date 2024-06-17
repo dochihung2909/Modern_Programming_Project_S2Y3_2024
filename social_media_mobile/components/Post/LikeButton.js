@@ -1,69 +1,65 @@
-import { View, Text, StyleSheet, Image } from 'react-native'
-import React, {useState} from 'react' 
-import ReactionButton from '@luu-truong/react-native-reaction-button'
-import EStyleSheet from 'react-native-extended-stylesheet';
-import { Icon } from 'react-native-paper';
+import { View, Text, Image } from 'react-native'
+import React, {useContext, useEffect, useMemo, useRef, useState} from 'react' 
+import ReactionButton from '@luu-truong/react-native-reaction-button' 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authApi } from '../../configs/APIs';
+import { LikeTypeContext, useReactions } from '../../configs/Contexts';
 
-const LikeButton = ({textStyle, imageStyle, icon}) => {
+const LikeButton = ({ isCurrentLiked, postId, endpoint, textStyle, imageStyle, icon}) => {  
 
-    const [value, setValue] = React.useState(-1);
+    const [likeTypeId, setLikeTypeId] = React.useState(isCurrentLiked);
+    const isFirstRender = useRef(true);
 
-    function onChange(index) {
-        setValue(value === index ? -1 : index);
+    const [isDislike, setIsDislike] = useState(-1)
+
+    function onChange(index) { 
+      setIsDislike(likeTypeId)
+      setLikeTypeId(likeTypeId === index ? -1 : index);   
     }
 
     // handle like
 
-    const reactions = [ 
-        {
-          source: {
-            uri: 'https://res.cloudinary.com/dhitdivyi/image/upload/v1718543691/micejv2cjaahjgsxhvnr.png'
-          },
-          title: 'Like'
-        },
-        {
-          source: 
-          {
-            uri: 'https://e7.pngegg.com/pngimages/540/262/png-clipart-white-heart-social-media-facebook-like-button-heart-emoticon-facebook-live-love-miscellaneous-text-thumbnail.png'
-          },
-          title: 'Love'
-        },
-        {
-          source: 
-          {
-            uri: 'https://w7.pngwing.com/pngs/409/185/png-transparent-happy-emoji-facebook-like-button-emoji-emoticon-haha-smiley-logos-long-time-no-see-thumbnail.png'
-          },
-          title: 'Haha'
-        },
-        {
-          source: 
-          {
-            uri: 'https://w7.pngwing.com/pngs/767/188/png-transparent-facebook-reaction-wow-hd-logo.png'
-          },
-          title: 'Wow'
-        },
-        {
-          source: 
-          {
-            uri: 'https://iconape.com/wp-content/png_logo_vector/facebook-reaction-sad.png'
-          },
-          title: 'Sad'
-        },
-        {
-          source: 
-          {
-            uri: 'https://w7.pngwing.com/pngs/74/788/png-transparent-angry-facebook-reaction-emoji-anger-social-media-facebook-emoji-react-blushing-emoji-love-face-orange.png'
-          },
-          title: 'Angry'
-        }
-      ];
+
+    const handleLike = async () => {
+      const access_token = await AsyncStorage.getItem('token')  
+      try {
+        let form = new FormData() 
+        form.append('like_type_id', likeTypeId == -1 ? isDislike : likeTypeId)
+        console.info(form)
+        const res = await authApi(access_token).post(endpoint, form, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+          })
+          console.log(res.data) 
+          if (res.status == 200) {
+            console.log('Like success')
+          }
+      } catch (err) {
+          console.info(err)
+      } 
+    }  
+     
+    useEffect(() => { 
+      // console.log(isDislike, likeTypeId, isCurrentLiked)
+      if (isFirstRender.current) {
+        isFirstRender.current = false;
+        console.log(isCurrentLiked, postId, likeTypeId)   
+        return;
+      }
+
+      if (isDislike != -1 || likeTypeId != -1) {
+        handleLike()    
+      }  
+    }, [likeTypeId, isDislike, isCurrentLiked])
+
+    const reactions =  useReactions().reactions; 
+
   return (
     <View className={'flex-row items-center justify-center'}>
-      {value == -1 &&  icon && <Image className={'w-[20px] h-[20px] mr-[-10px]'} source={{uri: 'https://cdn-icons-png.flaticon.com/512/58/58746.png'}} /> }
-      <ReactionButton imageProps={{style: imageStyle}} textProps={{style: textStyle}} reactions={reactions} defaultIndex={0} value={value} onChange={onChange} /> 
-    </View>
-    
-
+      {likeTypeId == -1 &&  icon && <Image className={'w-[20px] h-[20px] mr-[-10px]'} source={{uri: 'https://cdn-icons-png.flaticon.com/512/58/58746.png'}} /> }
+      <ReactionButton imageProps={{style: imageStyle}} textProps={{style: textStyle}} reactions={reactions} defaultIndex={0} value={likeTypeId} onChange={onChange} /> 
+    </View>   
   )
 } 
 
