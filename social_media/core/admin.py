@@ -9,7 +9,7 @@ from django.utils.html import strip_tags
 from django.utils.safestring import mark_safe
 
 from core.forms import PostForm, LikeCommentAdminForm
-from core.models import User, Post, Tag, Comment, LikePost, LikeComment, Role, LikeType, Room, Message,JoinRoom
+from core.models import User, Post, Tag, Comment, LikePost, LikeComment, Role, LikeType, Room, Message, JoinRoom, Alumni
 
 
 class PostAdmin(admin.ModelAdmin):
@@ -53,6 +53,10 @@ class UserAdmin(admin.ModelAdmin):
         if user.avatar:
             return mark_safe(f"<img width='120' height='120' src='{user.avatar.url}' />")
         return "No Image"
+
+
+class AlumniAdmin(admin.ModelAdmin):
+    list_display = ['id', 'code']
 
 
 class CommentAdmin(admin.ModelAdmin):
@@ -153,3 +157,4 @@ admin_site.register(LikeType, LikeTypeAdmin)
 admin_site.register(Room, RoomAdmin)
 admin_site.register(Message, MessageAdmin)
 admin_site.register(JoinRoom, JoinRoomAdmin)
+admin_site.register(Alumni, AlumniAdmin)

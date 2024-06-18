@@ -54,14 +54,6 @@ class Post(BaseModel):
         return f'{self.id} - {self.content[:50]}'
 
 
-# class Interaction(BaseModel):
-#     user = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
-#     post = models.ForeignKey(Post, null=True, on_delete=models.CASCADE)
-#
-#     class Meta:
-#         abstract = True
-
-
 class Comment(BaseModel):
     content = models.CharField(max_length=255)
     user = models.ForeignKey(User, null=True, on_delete=models.CASCADE)

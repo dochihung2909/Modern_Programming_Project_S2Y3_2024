@@ -27,17 +27,6 @@ class UserSerializer(serializers.ModelSerializer):
 
         return user
 
-    def validate(self, data):
-        if data.get('first_name') == data.get('last_name'):
-            raise serializers.ValidationError("First and last names must be different.")
-        password = data.get('password')
-        if password and len(password) < 8:
-            raise serializers.ValidationError("Password must be at least 8 characters long.")
-        username = data.get('username')
-        if (password and username) and (username in password):
-            raise serializers.ValidationError("Password cannot contain the username.")
-        return data
-
     class Meta:
         model = User
         fields = ['id', 'first_name', 'last_name', 'email', 'username', 'password', 'role', 'avatar']
@@ -52,6 +41,14 @@ class UserCustomSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['first_name', 'last_name', 'username', 'avatar', 'role']
+
+
+class AlumniSerializer(UserSerializer):
+    code = serializers.CharField(source='alumni.code', read_only=True)
+
+    class Meta:
+        model = UserSerializer.Meta.model
+        fields = UserSerializer.Meta.fields + ['code']
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -135,6 +132,7 @@ class AuthenticatedPostDetailsSerializer(PostDetailsSerializer):
         request = self.context.get('request')
         if request.user.is_authenticated:
             return post.likepost_set.filter(user=request.user, active=True).exists()
+        return False
 
     def get_like_type(self, post):
         request = self.context.get('request')
@@ -158,17 +156,6 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class AuthenticatedCommentSerializer(CommentSerializer):
-    # liked = serializers.SerializerMethodField()
-    #
-    # def get_liked(self, comment):
-    #     request = self.context.get('request')
-    #     if request.user.is_authenticated:
-    #         return comment.likecomment_set.filter(active=True).exists()
-    #
-    # class Meta:
-    #     model = CommentSerializer.Meta.model
-    #     fields = CommentSerializer.Meta.fields + ['liked']
-
     liked = serializers.SerializerMethodField()
     like_type = serializers.SerializerMethodField()
 
@@ -190,7 +177,7 @@ class AuthenticatedCommentSerializer(CommentSerializer):
         fields = CommentSerializer.Meta.fields + ['liked', 'like_type']
 
 
-class LikeType(serializers.ModelSerializer):
+class LikeTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = LikeType
         fields = ['id', 'name', 'image']
@@ -214,6 +201,6 @@ class JoinRoomSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = JoinRoom
-        fields = ['id', 'user', 'room']
+        fields = ['id', 'user', 'room', 'created_date']
 
 
