@@ -184,6 +184,7 @@ class LikeTypeSerializer(serializers.ModelSerializer):
 
 
 class RoomSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Room
         fields = ['id', 'title', 'room_type']
@@ -202,5 +203,3 @@ class JoinRoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = JoinRoom
         fields = ['id', 'user', 'room', 'created_date']
-
-

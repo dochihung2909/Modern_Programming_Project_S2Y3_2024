@@ -1,4 +1,3 @@
-from django.db.models import Q
 from rest_framework import viewsets, permissions, generics, serializers, status, parsers
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
@@ -6,7 +5,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
-
 from core import serializers, paginators, perms
 from .models import Post, User, Comment, LikePost, LikeComment, Room, JoinRoom, LikeType, Role, Alumni
 
@@ -31,7 +29,8 @@ class PostViewSet(viewsets.ViewSet,
         return queryset
 
     def get_permissions(self):
-        if self.action in ['add_post', 'add_comment', 'like', 'manage_comments', 'get_like', 'retrieve', 'get_users_likes']:
+        if self.action in ['add_post', 'add_comment', 'like', 'manage_comments', 'get_like', 'retrieve',
+                           'get_users_likes']:
             return [permissions.IsAuthenticated()]
         if self.action in ['delete_post', 'update']:
             return [perms.OwnerAuthenticated()]
@@ -68,7 +67,7 @@ class PostViewSet(viewsets.ViewSet,
                             status=status.HTTP_201_CREATED)
 
         elif request.method == 'GET':
-            c = post.comment_set.filter(active=True)
+            c = post.comment_set.filter(active=True).order_by('-created_date')
             serializer = serializers.CommentSerializer(c, many=True)
             return Response(serializer.data,
                             status=status.HTTP_200_OK)
@@ -109,7 +108,7 @@ class PostViewSet(viewsets.ViewSet,
 
     @action(methods=['get'], url_path='current-user', detail=False)
     def get_posts(self, request):
-        p = request.user.post_set.filter(active=True)
+        p = request.user.post_set.filter(active=True).order_by('-created_date')
 
         return Response(serializers.PostDetailsSerializer(p, many=True).data)
 
@@ -317,13 +316,23 @@ class RoomViewSet(viewsets.ViewSet,
     pagination_class = paginators.RoomPaginator
 
     def get_permissions(self):
-        if self.action in ['add_message', 'add_room', 'get_messages']:
+        if self.action in ['add_message', 'add_room', 'get_messages', 'retrieve']:
             return [permissions.IsAuthenticated()]
 
         return [permission() for permission in self.permission_classes]
 
     def get_object(self):
         return Room.objects.get(pk=self.kwargs['pk'])
+
+    def retrieve(self, request, pk=None):
+        room = self.get_object()
+        join_rooms = JoinRoom.objects.filter(room=room)
+        users = [join_room.user for join_room in join_rooms]
+        serializer = serializers.RoomSerializer(room)
+        return Response({
+            'room': serializer.data,
+            'participants': serializers.UserSerializer(users, many=True).data
+        })
 
     @action(methods=['post'], detail=False, url_path='add_room')
     def add_room(self, request):
@@ -343,9 +352,14 @@ class RoomViewSet(viewsets.ViewSet,
                 )
             user = User.objects.get(id=user_id)
             if JoinRoom.objects.filter(user=user, room=room).exists():
-                return Response(
-                    {'error': 'User is already in the room'}
-                )
+                room = self.get_object()
+                join_rooms = JoinRoom.objects.filter(room=room)
+                users = [join_room.user for join_room in join_rooms]
+                serializer = serializers.RoomSerializer(room)
+                return Response({
+                    'room': serializer.data,
+                    'participants': serializers.UserSerializer(users, many=True).data
+                })
             room.add_user(user)
             return Response(
                 {'message': 'User added to room successfully'},
@@ -372,6 +386,7 @@ class LikeTypeViewSet(viewsets.ViewSet,
                       generics.ListAPIView):
     queryset = LikeType.objects.filter(active=True)
     serializer_class = serializers.LikeTypeSerializer
+    permission_classes = [permissions.AllowAny]
 
 
 class RestrictedView(APIView):
@@ -518,4 +533,3 @@ class LoginViewSet(viewsets.ViewSet):
             'access': str(refresh.access_token),
             'user': serializer.data
         }, status=status.HTTP_200_OK)
-

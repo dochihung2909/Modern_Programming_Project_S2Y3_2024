@@ -50,7 +50,6 @@ class Post(BaseModel):
     tags = models.ManyToManyField(Tag, blank=True)
 
     def __str__(self):
-        # return f'{self.user_id} - {self.content[:50] + "..." if len(self.content) > 50 else self.content}'
         return f'{self.id} - {self.content[:50]}'
 
 
@@ -58,9 +57,13 @@ class Comment(BaseModel):
     content = models.CharField(max_length=255)
     user = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
     post = models.ForeignKey(Post, null=True, on_delete=models.CASCADE)
+    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE)
 
     def __str__(self):
         return f'{self.id} - {self.content[:50]}'
+
+    def get_sub_comments(self):
+        return self.comment_set.all()
 
 
 class LikeType(BaseModel):
