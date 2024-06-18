@@ -9,7 +9,7 @@ from django.utils.html import strip_tags
 from django.utils.safestring import mark_safe
 
 from core.forms import PostForm, LikeCommentAdminForm
-from core.models import User, Post, Tag, Comment, LikePost, LikeComment, Role, LikeType, Room, Message,JoinRoom
+from core.models import User, Post, Tag, Comment, LikePost, LikeComment, Role, LikeType, Room, Message, JoinRoom, Alumni
 
 
 class PostAdmin(admin.ModelAdmin):
@@ -55,6 +55,10 @@ class UserAdmin(admin.ModelAdmin):
         return "No Image"
 
 
+class AlumniAdmin(admin.ModelAdmin):
+    list_display = ['id', 'code']
+
+
 class CommentAdmin(admin.ModelAdmin):
     list_display = ['id', 'user_id', 'post_id', 'short_content']
     list_filter = ['user_id']
@@ -83,7 +87,7 @@ class LikePostAdmin(admin.ModelAdmin):
 
 
 class LikeCommentAdmin(admin.ModelAdmin):
-    list_display = ['id', 'user_id', 'comment_id']
+    list_display = ['id', 'user_id', 'comment_id', 'like_type']
     list_filter = ['user_id']
 
     form = LikeCommentAdminForm
@@ -153,3 +157,4 @@ admin_site.register(LikeType, LikeTypeAdmin)
 admin_site.register(Room, RoomAdmin)
 admin_site.register(Message, MessageAdmin)
 admin_site.register(JoinRoom, JoinRoomAdmin)
+admin_site.register(Alumni, AlumniAdmin)
