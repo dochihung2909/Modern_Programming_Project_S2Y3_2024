@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity,Image, FlatList, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import { MyUserContext } from '../../configs/Contexts';
+import { MyUserContext, useAuth } from '../../configs/Contexts';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authApi, endpoints } from '../../configs/APIs';
 import LikeButton from './LikeButton';
@@ -12,7 +12,7 @@ import InputComment from './InputComment';
 import { useFocusEffect } from '@react-navigation/native';
 
 const Comment = ({ postId, navigation }) => {
-    const user = useContext(MyUserContext)  
+    const { user} = useAuth()  
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState('');  
 

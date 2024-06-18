@@ -9,7 +9,7 @@ import Home from './components/Home/Home';
 import { ActivityIndicator, Icon } from 'react-native-paper';
 import Notification from './components/Notification/Notification';
 import Profile from './components/Profile/Profile'; 
-import {MyUserContext, MyDispatchContext, AuthenticatedUserContext, AuthenticatedUserProvider, ReactionProvider} from './configs/Contexts'
+import {MyUserContext, MyDispatchContext, AuthenticatedUserContext, AuthenticatedUserProvider, ReactionProvider, useAuth, AuthProvider} from './configs/Contexts'
 import {MyUserReducer} from './configs/Reducers'
 import Room from './components/Chat/Room';
 import Chat from './components/Chat/Chat'; 
@@ -20,6 +20,10 @@ import InputPost from './components/Post/InputPost';
 import DetailPost from './components/Post/DetailPost';
 import UpdateInputComment from './components/Post/UpdateInputComment';  
 import RoomHeaderCustom from './components/Chat/RoomHeaderCustom';
+import LoadingScreen from './components/LoadingScreen';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authApi, endpoints } from './configs/APIs';
+import EditProfile from './components/Profile/EditProfile';
 
 const Stack = createNativeStackNavigator();
 
@@ -28,7 +32,7 @@ const Tab = createBottomTabNavigator();
  
 
 const MyTab = () => {
-  const user = useContext(MyUserContext);   
+  const { user } = useAuth();   
   
   return (
     <Tab.Navigator className='w-[10%]' 
@@ -49,43 +53,79 @@ const MyTab = () => {
 
 
 const MyStack = () => {
+  const { user } = useAuth()
+
   return (
     <Stack.Navigator defaultNavigationOptions={{headerTitleAlign: 'center'}}>
-      <Stack.Screen name="Login" component={Login} options={{title: 'Đăng nhập', headerTitleAlign: 'center'}} ></Stack.Screen> 
-      <Stack.Screen name="Register" component={Register} ></Stack.Screen>
-      <Stack.Screen
-        name="MyTab"
-        component={MyTab} 
-        options={{ headerShown: false }}
-      />  
-      <Stack.Screen name='Room' component={Room} options={{
-        // header: ({ options, navigation, route }) => <RoomHeaderCustom route={route} navigation={navigation}/> ,
-        title: 'Nhắn tin',
-        headerTitleAlign: 'center'
-      }} />   
-      <Stack.Screen name='User_Profile' component={Profile} />  
-      <Stack.Screen name='InputPost' component={InputPost} options={{title: 'Tạo bài viết', headerTitleAlign: 'center'}}/>   
-      <Stack.Screen name='DetailPost' component={DetailPost} options={{title: 'Bài viết', headerTitleAlign: 'center'}}/>  
-      <Stack.Screen name='UpdateInputComment' component={UpdateInputComment} options={{title: 'Sửa bình luận', headerTitleAlign: 'center'}}/>   
+      {!user ? 
+      <>
+        <Stack.Screen name="Login" component={Login}  options={{headerShown: false}} ></Stack.Screen> 
+        <Stack.Screen name="Register" component={Register} ></Stack.Screen>
+      </> :
+      <>
+        <Stack.Screen
+          name="MyTab"
+          component={MyTab} 
+          options={{ headerShown: false }}
+        />  
+        <Stack.Screen name='Room' component={Room} options={{
+          // header: ({ options, navigation, route }) => <RoomHeaderCustom route={route} navigation={navigation}/> ,
+          title: 'Nhắn tin',
+          headerTitleAlign: 'center'
+        }} />   
+        <Stack.Screen name='User_Profile' component={Profile} />  
+        <Stack.Screen name='InputPost' component={InputPost} options={{title: 'Tạo bài viết', headerTitleAlign: 'center'}}/>   
+        <Stack.Screen name='DetailPost' component={DetailPost} options={{title: 'Bài viết', headerTitleAlign: 'center'}}/>  
+        <Stack.Screen name='UpdateInputComment' component={UpdateInputComment} options={{title: 'Sửa bình luận', headerTitleAlign: 'center'}}/>   
+        <Stack.Screen name='EditProfile' component={EditProfile} options={{title: 'Sửa bình luận', headerTitleAlign: 'center'}}/>   
+      </>
+    }
+      
     </Stack.Navigator>
   )
 }
 
-export default function App() {
-  const [user, dispatch] = useReducer(MyUserReducer, null);
-  console.log(user)
+export default function App() {  
+  const [isLoading, setIsLoading] = useState(true); 
+  const [user, dispatch] = useReducer(MyUserReducer, null); 
+
+  useEffect(() => {
+    const checkToken = async () => {
+      try {
+        const savedToken = await AsyncStorage.getItem('token'); 
+        if (savedToken) {
+          let user = await authApi(savedToken).get(endpoints['current_user']);
+          console.info(user.data); 
+          dispatch({ type: 'login', payload: user.data });
+        } else {
+          dispatch({ type: 'logout' });
+          console.log('logged out');
+          await AsyncStorage.removeItem('token');
+        }
+      } catch (error) {
+        console.error('Failed to check token', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkToken();
+  }, []);
+
+  if (isLoading) {
+    return <LoadingScreen />; // Hoặc bất kỳ màn hình loading nào bạn muốn hiển thị
+  }
+
   return (
-    <MenuProvider> 
-        <NavigationContainer>
-          <MyUserContext.Provider value={user}>
-            <MyDispatchContext.Provider value={dispatch}>
-              <ReactionProvider> 
+      <ReactionProvider> 
+        <AuthProvider>
+          <MenuProvider> 
+            <NavigationContainer>
                 <MyStack></MyStack>  
-              </ReactionProvider> 
-            </MyDispatchContext.Provider>
-          </MyUserContext.Provider>
-        </NavigationContainer>
-      </MenuProvider>
+            </NavigationContainer>
+          </MenuProvider>
+        </AuthProvider> 
+      </ReactionProvider>  
 
     
   );

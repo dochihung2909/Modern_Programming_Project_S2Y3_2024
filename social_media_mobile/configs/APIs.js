@@ -22,11 +22,14 @@ export const endpoints = {
     'like_post': (id) => `/posts/${id}/like/`,
     'delete_comment': (id) => `comments/${id}/delete/`,
     'update_comment': (id) => `/comments/${id}/`,
-    'get_like_type': '/like_types/get_like_type/',
+    'get_like_type': '/like_types/',
     'create_room': '/rooms/add_room/',
     'add_user_to_room_by_id': (id) => `/rooms/${id}/add_user/`,
     'like_comment': (id) => `/comments/${id}/like/`,
     'post_likes': (id) => `/posts/${id}/likes/`,
+    'post_by_id': (id) => `/posts/${id}/`,
+    'posts_user_liked_by_id': (id) => `/users/${id}/posts_liked/`,
+    'chat_with_target_user': `/users/current-user/add_room/`
 }
 
 export const authApi = (token) => {

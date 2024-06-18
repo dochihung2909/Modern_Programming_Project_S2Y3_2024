@@ -1,6 +1,7 @@
 import { format, formatDistanceToNow, parseISO } from 'date-fns'; 
 import { enUS } from 'date-fns/locale/en-US';
 import { vi } from 'date-fns/locale/vi';
+import { Dimensions, Image } from 'react-native';
 
 
 const formatDate = (dateString) => {
@@ -25,7 +26,33 @@ const formatUrl = (url) => {
         
   if (index !== -1) {
     return url.slice(0, index) + url.slice(index + partToRemove.length);
-  }
-}
+  } 
+  return url 
+} 
 
-export { formatDate, formatUrl } 
+const resizeImage = (originalWidth, originalHeight, maxWidth = Dimensions.get('window').width, maxHeight = Dimensions.get('window').height) => {
+  const aspectRatio = originalWidth / originalHeight; 
+  let newWidth = originalWidth;
+  let newHeight = originalHeight;
+
+  if (originalWidth > maxWidth) {
+    newWidth = maxWidth;
+    newHeight = newWidth / aspectRatio;
+  }
+
+  if (newHeight > maxHeight) {
+    newHeight = maxHeight;
+    newWidth = newHeight * aspectRatio;
+  }
+
+  return { width: newWidth, height: newHeight };
+};
+
+const calculateNewImageHeight = (originalWidth, originalHeight, screenWidth = Dimensions.get('window').width) => {
+  const aspectRatio = originalWidth / originalHeight;
+  const newHeight = screenWidth / aspectRatio; 
+  console.log(newHeight, Dimensions.get('window').height / 2)
+  return Math.round(newHeight);
+};
+
+export { formatDate, formatUrl, resizeImage, calculateNewImageHeight } 

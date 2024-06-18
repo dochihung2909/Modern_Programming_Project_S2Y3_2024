@@ -10,20 +10,19 @@ import { authApi, endpoints } from '../../configs/APIs';
 import AsyncStorage from '@react-native-async-storage/async-storage'; 
 import { useIsFocused } from '@react-navigation/native';
 import axios from 'axios';
-import { MyUserContext } from '../../configs/Contexts';
+import { MyUserContext, useAuth } from '../../configs/Contexts';
  
 
 const Chat = ({navigation}) => {     
   const [rooms, setRooms] = useState([]) 
-  const user = useContext(MyUserContext)
+  const { user} = useAuth()
   
   const isFocused = useIsFocused();  
   
 
   const loadRooms = async () => {
     const access_token = await AsyncStorage.getItem('token')
-    const res = await authApi(access_token).get(endpoints['user_rooms']);   
-    console.log(res.data)
+    const res = await authApi(access_token).get(endpoints['user_rooms']);    
     setRooms(res.data)  
   }
 

@@ -4,7 +4,7 @@ import { useState, useEffect, useContext } from 'react'
 import { HelperText, TextInput, TouchableRipple, Button, Provider } from 'react-native-paper'  
 import DropDown from "react-native-paper-dropdown";   
 import { useNavigation } from "@react-navigation/native";
-import { MyDispatchContext } from '../../configs/Contexts';
+import { MyDispatchContext, useAuth } from '../../configs/Contexts';
 import APIs, { endpoints, authApi } from '../../configs/APIs'; 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -13,13 +13,14 @@ const Login = () => {
     const [user, setUser] = useState({}) 
     const [showDropdown, setShowDropdown]  = useState(false);
     const [err, setErr] = React.useState(false);
-    const [loading, setLoading] = React.useState(false);
-    const dispatch = useContext(MyDispatchContext);
+    const [loading, setLoading] = React.useState(false); 
     const nav = useNavigation();
+    const { login } = useAuth();
 
     const client_id = process.env.CLIENT_ID 
     const client_secret = process.env.CLIENT_SECRET
 
+    
 
     const typeList = [ 
         {
@@ -48,7 +49,7 @@ const Login = () => {
         "secureTextEntry": true
     }];  
 
-    const login = async () => {
+    const handleLogin = async () => {
         updateSate('type', type) 
         setLoading(true);
         try { 
@@ -64,32 +65,35 @@ const Login = () => {
                         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
                     }
                 }
-            ); 
-            console.info(user)
+            );  
+            if (res.status == 200) {
+                console.info(user) 
+                await AsyncStorage.setItem("token", res.data.access_token);
+                console.info(res.data.access_token); 
+                
+                setTimeout(async () => {
+                    let user = await authApi(res.data.access_token).get(endpoints['current_user']);
+                    console.info(user.data);
 
-            await AsyncStorage.setItem("token", res.data.access_token);
-            console.info(res.data.access_token); 
+                    await login(user.data)
+                    console.log('navigate')
+                    nav.navigate('MyTab');
+                }, 100);
+                setErr(false)
+            }  
             
-            setTimeout(async () => {
-                let user = await authApi(res.data.access_token).get(endpoints['current_user']);
-                console.info(user.data);
-
-                dispatch({
-                    'type': "login",
-                    'payload': user.data
-                })
-                console.log('navigate')
-                nav.navigate('MyTab');
-            }, 100);
+            
         } catch (ex) {
             console.error(ex);
+            setErr(true)
         } finally {
             setLoading(false);
         }   
     }
  
 
-    const updateSate = (field, value) => {
+    const updateSate = (field, value) => { 
+        setErr(false)
         setUser(current => {
             return {...current, [field]: value}
         });
@@ -100,19 +104,32 @@ const Login = () => {
     // }, [type])
 
 
-    // useEffect(() => {
-    //     console.log(user)
-    // }, [user])
+    useEffect(() => {
+        const fetchToken =  async () => {
+            const access_token = (await AsyncStorage.getItem('token'))
+            
+            if (access_token) {
+                let user = await authApi(access_token).get(endpoints['current_user']);
+                console.info(user.data);
+                await login(user.data)
+                console.log('navigate')
+                nav.navigate('MyTab');
+            } else {
+                return
+            } 
+        }
+        fetchToken()
+    }, [])
 
 
     return (
     <>   
-      <View className="m-[5px]"> 
+      <View className="mx-4 mt-[10%]"> 
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}> 
             <ScrollView>
-                <Text className='text-blue-50'>ĐĂNG NHẬP</Text> 
+                <Text className='text-blue-500 text-center text-xl font-bold mb-4'>ĐĂNG NHẬP</Text> 
                 
-                <View className='z-[1]'>
+                <View className='z-10'>
                     <Provider>            
                         <DropDown            
                             label='Loại đăng nhập'
@@ -132,26 +149,24 @@ const Login = () => {
                     </Provider> 
                 </View>
 
-                {fields.map(c => <TextInput className="my-[5px]" secureTextEntry={c.secureTextEntry} value={user[c.name]} onChangeText={t => updateSate(c.name, t)} key={c.name} label={c.label} right={<TextInput.Icon icon={c.icon} />} />)}
+                {fields.map(c => 
+                <TextInput className="my-[5px]" secureTextEntry={c.secureTextEntry} value={user[c.name]} onChangeText={t => updateSate(c.name, t)} key={c.name} label={c.label} right={<TextInput.Icon icon={c.icon} />} />)}
 
                 <HelperText type="error" visible={err}>
-                    Mật khẩu không khớp!
+                    Sai tên đăng nhập hoặc mật khẩu
                 </HelperText> 
 
-                <Button className='text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800' icon="account" loading={loading} mode="contained" onPress={login}>ĐĂNG NHẬP</Button>
+                <Button className='text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800' icon="account" loading={loading} mode="contained" onPress={handleLogin}>ĐĂNG NHẬP</Button>
                 <View className={'flex-row items-center'}>
                      <Text className={'pr-2 text-base'}>Đăng ký tài khoản cựu sinh viên?</Text>
                      <TouchableOpacity className={'text-base font-light text-gray-500 dark:text-gray-400'}  onPress={() => nav.navigate('Register')}>
                         <Text className='underline font-medium text-blue-600'>
                             Đăng ký
                         </Text>
-                    </TouchableOpacity>
-
-                </View>
-                
+                    </TouchableOpacity> 
+                </View> 
             </ScrollView>
-        </KeyboardAvoidingView> 
-            
+        </KeyboardAvoidingView>  
       </View>
     </>
     ) 

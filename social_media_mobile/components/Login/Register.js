@@ -6,7 +6,7 @@ import * as ImagePicker from 'expo-image-picker';
 import mime from 'mime';
 import APIs, { endpoints } from '../../configs/APIs';
 
-export default Register = () => { 
+export default Register = ({navigation}) => { 
     const [user, setUser] = useState({})   
     const [err, setErr] = React.useState(false);
     const [loading, setLoading] = React.useState(false);
@@ -59,7 +59,7 @@ export default Register = () => {
                 });
                 console.info(res)
                 if (res.status === 201)
-                    nav.navigate("Login");
+                    navigation.navigate("Login");
             } catch (ex) {
                 console.error(ex);
             } finally {

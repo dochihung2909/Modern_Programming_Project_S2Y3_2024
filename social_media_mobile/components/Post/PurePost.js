@@ -1,4 +1,4 @@
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native'
+import { View, Text, Image, StyleSheet, TouchableOpacity, useWindowDimensions, Dimensions, Alert } from 'react-native'
 import React, {useContext, useEffect, useState} from 'react'
 import DropdownMenu from './DropdownMenu'
 import LikeButton from './LikeButton';
@@ -8,26 +8,37 @@ import Separate from '../Separate/Separate';
 import { authApi, endpoints } from '../../configs/APIs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
-import { MyUserContext } from '../../configs/Contexts';
+import { MyUserContext, useAuth } from '../../configs/Contexts';
+import RenderHtml from 'react-native-render-html';
+import {calculateNewImageHeight, resizeImage} from '../../dao/index'
+import AlertModal from '../Modal/AlertModal';
 
-const PurePost = ({refreshing, post, alwaysShowComment = false, navigation}) => { 
-    const [showComments, setShowComments] = useState(false);
-    const [isCurrentLiked, setIsCurrentLiked] = useState(-1)
-    const [loading, setLoading] = useState(true);
+const PurePost = ({isDetail, isCurrentLiked, loadPosts, post, alwaysShowComment = false, navigation}) => { 
+    // console.log(isCurrentLiked, post.id)
+    const [showComments, setShowComments] = useState(false); 
+    const [containerWidth, setContainerWidth] = useState(0); 
+    const [imageHeight, setImageHeight] = useState(0);
+    const [isModalVisible, setIsModalVisible] = useState(false); 
     
-    const user = useContext(MyUserContext)
+    const { user } = useAuth()
     
+    const { width } = useWindowDimensions();
 
     const toggleComments = () => {
         setShowComments(!showComments);
     };
 
+    // Edit post
     const handleEditPost = async (postId) => {
-        console.log(`Edit post with ID: ${postId}`);
-      };
+        navigation.navigate('InputPost', {
+            post: post,
+            user: user
+        })
+    };
     
-    const handleDeletePost = async (postId) => {
-    console.log(`Delete post with ID: ${postId}`);
+    //   Delete post
+    const handleDeletePost = async (postId) => { 
+        console.log(`Delete post with ID: ${postId}`);
         const access_token = await AsyncStorage.getItem('token')
         let form = new FormData() 
 
@@ -39,31 +50,21 @@ const PurePost = ({refreshing, post, alwaysShowComment = false, navigation}) => 
         })
         console.log(res.data)
         if (res.status == 200) {
-            console.log('Delete success')
+            console.log('Delete success')   
+            loadPosts()
         }
-    };
+    }; 
 
-    // Check current user liked this post or not
-    const checkIsCurrentLike = async() => { 
-        const access_token = await AsyncStorage.getItem('token') 
-        const res = await authApi(access_token).get(endpoints['post_likes'](post.id))
-        let likes = res.data
-        for (l of likes) {
-            if (l.user.username == user.username) {
-                setIsCurrentLiked(l.like_type) 
-                break;
-            } 
-        } 
-    }
+    const onContainerLayout = (event) => {
+        const { width } = event.nativeEvent.layout;
+        setContainerWidth(Math.round(width));  
 
-    useEffect(() => {
-        checkIsCurrentLike()
-    }, [])  
-
-    useEffect(() => {
-        checkIsCurrentLike() 
-        setLoading(refreshing) 
-    }, [refreshing])
+        if (width > 0) {
+            Image.getSize(post.image, (imgWidth, imgHeight) => { 
+                setImageHeight(calculateNewImageHeight(imgWidth, imgHeight, width));
+            });
+        }
+    };   
      
     
     const handleHidePost = (postId) => {
@@ -83,7 +84,7 @@ const PurePost = ({refreshing, post, alwaysShowComment = false, navigation}) => 
 return (
     <>
         <View className={('bg-white p-4 rounded-lg shadow')}>
-            <View className={'flex-row justify-between'}> 
+            <View onLayout={onContainerLayout}  className={'flex-row justify-between'}> 
                 <TouchableOpacity  className={('flex-row items-center mb-4')} onPress={() => handleNavigateUser(post?.user.id)}>
                     <Image source={{ uri: post.user?.avatar }} className={('w-10 h-10 rounded-full mr-4')} />
                     <Text className={('font-bold text-lg')}>{`${post?.user.first_name} ${post.user.last_name}`}</Text> 
@@ -91,21 +92,36 @@ return (
                 {post?.user.id == user.id &&
                     <DropdownMenu
                         onEdit={() => handleEditPost(post?.id)}
-                        onDelete={() => handleDeletePost(post?.id)}
+                        onDelete={() => setIsModalVisible(true)}
                         onHide={() => handleHidePost(post?.id)}
                     ></DropdownMenu>
                 }
                 
             </View>
-            <Text className={('text-base mb-4')}>{post?.content}</Text>
-            {post?.image && (
-                <Image source={{ uri: post?.image }} className={('w-full h-48 rounded-lg mb-4')} />
+                {/* <Text className={('text-base flex flex-wrap w-screen mb-4')}> 
+                    <RenderHtml 
+                        contentWidth={width}
+                        source={{ html: post?.content }}
+                    />
+                </Text> */}
+            <View className={'flex flex-wrap mb-4'}>
+                <RenderHtml 
+                    contentWidth={width}
+                    source={{ html: post?.content }}
+                />
+            </View>
+                
+            {post.image && (
+                <Image source={{ uri: post.image }} className={('rounded-lg mb-4')} style={
+                    {
+                        width: '100%',
+                        height: isDetail ? imageHeight : Math.min(imageHeight, Math.round(Dimensions.get('window').height / 2))
+                    }
+                }/>
             )}
             <View className={('flex-row justify-around border-t border-gray-200 pt-2')}>
-                <View className={('flex-row flex-1 justify-center items-center')}>     
-                {(!loading) && 
-                    <LikeButton postId={post.id} isCurrentLiked={isCurrentLiked} endpoint={endpoints['like_post'](post?.id)} imageStyle={styles.image} textStyle={styles.text} icon={true}></LikeButton>
-                }
+                <View className={('flex-row flex-1 justify-center items-center')}>    
+                <LikeButton isCurrentLiked={isCurrentLiked} postId={post.id} endpoint={endpoints['like_post'](post?.id)} imageStyle={styles.image} textStyle={styles.text} icon={true}></LikeButton>
                 </View>
                 <TouchableOpacity onPress={toggleComments} className={('flex-1 flex-row justify-center items-center')}>
                     <Icon source='comment-outline' size={20} color="#000" /> 
@@ -117,6 +133,7 @@ return (
                 </TouchableOpacity>
             </View>
             {(showComments || alwaysShowComment) && <Comment navigation={navigation} postId={post?.id} />}
+            <AlertModal isModalVisible={isModalVisible} setIsModalVisible={setIsModalVisible} alertMessage={'Hành động này sẽ xoá vĩnh viễn bài viết này. Bạn có tiếp tục chứ?'} confirmMessage={'Xoá'} cancelMessage={'Huỷ'} handleConfirm={() => handleDeletePost(post.id)} ></AlertModal>
         </View>
         <Separate />
     </>

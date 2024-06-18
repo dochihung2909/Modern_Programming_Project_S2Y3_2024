@@ -1,11 +1,11 @@
-import { View, Text, FlatList, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, RefreshControl } from 'react-native'
+import { View, Text, FlatList, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native'
 import React, {useState, useRef, useEffect, useLayoutEffect, useContext, useCallback} from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Input from './Input';
 import Message from './Message'; 
 import { authApi, endpoints } from '../../configs/APIs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { MyUserContext } from '../../configs/Contexts';
+import { MyUserContext, useAuth } from '../../configs/Contexts';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import mime from 'mime';
@@ -15,16 +15,16 @@ import {
   orderBy,
   query,
   onSnapshot, 
-  where
+  where,
+  deleteDoc, doc
 } from 'firebase/firestore';
 import { auth, database } from '../../configs/firebase'; 
-import { GiftedChat } from 'react-native-gifted-chat'; 
+import { GiftedChat, Message as GiftMessage  } from 'react-native-gifted-chat'; 
 
 const Room = ({ route, navigation }) => { 
     const {id, targetUser } = route.params
-    const user = useContext(MyUserContext)   
-    const isFocused = useIsFocused(); 
-    const [loading, setLoading] = useState(false);
+    const { user} = useAuth()   
+    const isFocused = useIsFocused();  
     console.log(user.avatar)
     const [messages, setMessages] = useState([]);
 
@@ -118,17 +118,63 @@ const Room = ({ route, navigation }) => {
         const unsubscribe = onSnapshot(q, snapshot => {
             console.log('snapshot')
             setMessages(
-              snapshot.docs.map(doc => ({   
-                _id: doc.data()._id,
-                text: doc.data().text,
-                createdAt: doc.data().createdAt?.toDate(),
-                user: doc.data().user,
-                room_id: doc.data().room_id
-              }))
+              snapshot.docs.map(doc => { 
+                return {   
+                  _id: doc.data()._id,
+                  text: doc.data().text,
+                  createdAt: doc.data().createdAt?.toDate(),
+                  user: doc.data().user,
+                  room_id: doc.data().room_id
+                }
+              })
             )
         })
         return unsubscribe
       }, []) 
+
+      const deleteMessage = async (messageId) => {  
+        console.log(messageId)
+        const docRef = doc(database, 'chats', messageId);
+        const res = doc(database, 'chats', where('_id', '==', messageId));
+        // console.log(res)
+        deleteDoc(res)
+          .then(() => {
+            Alert.alert('Message deleted successfully');
+          })
+          .catch((error) => {
+            Alert.alert('Error deleting message:', error.message);
+          });
+      };
+
+      const handleLongPress = (currentMessage) => {
+        Alert.alert(
+          'Choose an action',
+          'What do you want to do?',
+          [
+            {
+              text: 'Delete',
+              onPress: () => deleteMessage(currentMessage._id),
+              style: 'destructive',
+            },
+            {
+              text: 'Cancel',
+              style: 'cancel',
+            },
+          ],
+          { cancelable: true }
+        );
+      };
+
+      const renderMessage = (props) => {
+        const { currentMessage } = props;
+        return (
+          <View className={'flex'}>
+            <TouchableOpacity onLongPress={() => handleLongPress(currentMessage)}>
+              <GiftMessage {...props} /> 
+            </TouchableOpacity> 
+          </View>
+        );
+      };
 
     return (
       <GiftedChat
@@ -139,6 +185,7 @@ const Room = ({ route, navigation }) => {
           _id: user.id,
           avatar: user.avatar, 
         }} 
+        renderMessage={renderMessage}
       /> 
     )
 }

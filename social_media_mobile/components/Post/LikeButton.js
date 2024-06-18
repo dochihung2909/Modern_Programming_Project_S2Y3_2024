@@ -6,8 +6,7 @@ import { authApi } from '../../configs/APIs';
 import { LikeTypeContext, useReactions } from '../../configs/Contexts';
 
 const LikeButton = ({ isCurrentLiked, postId, endpoint, textStyle, imageStyle, icon}) => {  
-
-    const [likeTypeId, setLikeTypeId] = React.useState(isCurrentLiked);
+    const [likeTypeId, setLikeTypeId] = React.useState(isCurrentLiked); 
     const isFirstRender = useRef(true);
 
     const [isDislike, setIsDislike] = useState(-1)
@@ -15,16 +14,17 @@ const LikeButton = ({ isCurrentLiked, postId, endpoint, textStyle, imageStyle, i
     function onChange(index) { 
       setIsDislike(likeTypeId)
       setLikeTypeId(likeTypeId === index ? -1 : index);   
+      handleLike(index)
     }
 
     // handle like
 
 
-    const handleLike = async () => {
+    const handleLike = async (index) => {
       const access_token = await AsyncStorage.getItem('token')  
       try {
         let form = new FormData() 
-        form.append('like_type_id', likeTypeId == -1 ? isDislike : likeTypeId)
+        form.append('like_type_id', index)
         console.info(form)
         const res = await authApi(access_token).post(endpoint, form, {
           headers: {
@@ -39,19 +39,10 @@ const LikeButton = ({ isCurrentLiked, postId, endpoint, textStyle, imageStyle, i
           console.info(err)
       } 
     }  
-     
-    useEffect(() => { 
-      // console.log(isDislike, likeTypeId, isCurrentLiked)
-      if (isFirstRender.current) {
-        isFirstRender.current = false;
-        console.log(isCurrentLiked, postId, likeTypeId)   
-        return;
-      }
 
-      if (isDislike != -1 || likeTypeId != -1) {
-        handleLike()    
-      }  
-    }, [likeTypeId, isDislike, isCurrentLiked])
+    useEffect(() => {  
+      setLikeTypeId(isCurrentLiked)  
+    }, [isCurrentLiked]) 
 
     const reactions =  useReactions().reactions; 
 

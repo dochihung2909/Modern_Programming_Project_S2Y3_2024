@@ -1,35 +1,41 @@
 import { View, Text, Image, ScrollView, RefreshControl } from 'react-native'
 import React, {useState, useContext, useEffect} from 'react' 
 import Post from '../Post/Post'
-import { MyUserContext } from '../../configs/Contexts';
+import { MyUserContext, useAuth } from '../../configs/Contexts';
 import APIs, {endpoints, authApi} from '../../configs/APIs'; 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useIsFocused } from '@react-navigation/native';
+import { useFocusEffect, useIsFocused } from '@react-navigation/native';
 import InputPostNavigate from '../Post/InputPostNavigate';
 
 export default function Home({navigation}) {
-  const user = useContext(MyUserContext);   
+  const { user} = useAuth();   
   const isFocused = useIsFocused(); 
   const [posts, setPosts] = useState([]) 
+  const [loading, setLoading] = useState(false)
   const [nextPost, setNextPost] = useState('')
+  const [likedList, setLikedList] = useState([])
 
   const loadPosts = async () => {
     const access_token = await AsyncStorage.getItem('token')
     let res = await authApi(access_token).get(endpoints['posts']);   
     let ps = res.data.results  
     setNextPost(res.data.next)
-    setPosts(ps)   
-    // while(res.data.next != null) {
-    //   res = await authApi(access_token).get(res.data.next)  
-    //   ps = [...ps, ...res.data.results]
-    //   // setPosts(ps)   
-    // }  
-    // setPosts(ps)    
-  }    
+    setPosts(ps)    
 
-  useEffect(() => { 
-    console.log(posts)
-  }, [posts])
+    let likedRes = await authApi(access_token).get(endpoints['posts_user_liked_by_id'](user.id))
+    // console.log(likedRes.data) 
+    setLikedList(likedRes.data)
+  }     
+
+  const checkLiked = (postId) => {
+    let like_type = -1
+    likedList.find(liked => {
+      if (liked.id == postId) { 
+        like_type = liked.like_type.id  
+      }
+    })
+    return like_type
+  } 
 
   useEffect(() => { 
     (isFocused && user != null) && loadPosts()  
@@ -43,6 +49,7 @@ export default function Home({navigation}) {
 
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
+    loadPosts() 
     setTimeout(() => {
       setRefreshing(false);
     }, 2000);
@@ -55,12 +62,25 @@ export default function Home({navigation}) {
     }) 
   }
 
+  useFocusEffect(
+    React.useCallback(() => {
+      loadPosts();
+    }, [])
+  );
+
   const loadMorePost = async () => {
     const access_token = await AsyncStorage.getItem('token')
-    let res = await authApi(access_token).get(nextPost);   
-    let ps = res.data.results   
-    setNextPost(res.data.next)
-    setPosts([...posts, ...ps])   
+    try {
+      let res = await authApi(access_token).get(nextPost);   
+      let ps = res.data.results   
+      setNextPost(res.data.next)
+      setPosts([...posts, ...ps])   
+    } catch(err) {
+      console.log(err)
+    } finally {
+      setLoading(false)
+    } 
+    
   }
 
   const isCloseToBottom = ({layoutMeasurement, contentOffset, contentSize}) => {
@@ -74,7 +94,8 @@ export default function Home({navigation}) {
       onScroll={({nativeEvent}) => {
         if (isCloseToBottom(nativeEvent)) {
           console.log('End screent', nextPost)
-          if (nextPost) { 
+          if (nextPost && !loading) { 
+            setLoading(true) 
             loadMorePost();
           }
         }
@@ -82,7 +103,7 @@ export default function Home({navigation}) {
       className={'bg-white'} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
       
       <InputPostNavigate user={user} handleNavigateInputPost={handleNavigateInputPost}></InputPostNavigate> 
-      {posts.slice(0).reverse().map(post => <Post refreshing={refreshing} navigation={navigation} key={post.id} post={post}></Post>)} 
+      {posts.map(post => <Post loadPosts={loadPosts} isCurrentLiked={checkLiked(post.id)} refreshing={refreshing} navigation={navigation} key={post.id} post={post}></Post>)} 
     </ScrollView>
   )
 }

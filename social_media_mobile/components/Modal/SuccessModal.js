@@ -4,11 +4,10 @@ import Modal from "react-native-modal";
 import { Button } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 
-const SuccessModal = ({successMessage, isModalVisible, handleModal}) => {  
-    const nav = useNavigation()
-
-    const handleNavigate = () => {
-        nav.navigate('Profile')
+const SuccessModal = ({confirmMessage, cancelMessage, handleConfirm, handleCancel, successMessage, isModalVisible, setIsModalVisible}) => {  
+    
+    const handleModal = () => {
+        setIsModalVisible(false)
     }
 
   return (
@@ -24,12 +23,15 @@ const SuccessModal = ({successMessage, isModalVisible, handleModal}) => {
                         {successMessage}
                     </Text>
                     <View className={'flex-row gap-2 items-center justify-center my-2'}>
-                        <Button className={('bg-blue-500 p-2 rounded-lg mt-4')} onPress={handleModal}>
-                            <Text  Text className={('text-white text-center')}>Tiếp tục đăng bài</Text> 
+                        <Button className={('bg-blue-500 p-2 rounded-lg mt-4')} onPress={handleConfirm}>
+                            <Text  Text className={('text-white text-center')}>{confirmMessage}</Text> 
                         </Button>
-                        <Button className={('bg-green-500 p-2 rounded-lg mt-4')} onPress={handleNavigate}>
-                            <Text Text className={('text-white text-center')}>Về trang timeline</Text> 
-                        </Button>
+                        {cancelMessage && 
+                            <Button className={('bg-green-500 p-2 rounded-lg mt-4')} onPress={handleCancel || handleModal}>
+                                <Text Text className={('text-white text-center')}>{cancelMessage}</Text> 
+                            </Button>
+                        }
+                        
                     </View>
                     
                 </View>

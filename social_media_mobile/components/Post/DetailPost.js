@@ -8,7 +8,7 @@ import { endpoints } from '../../configs/APIs'
 import PurePost from './PurePost'
 
 const DetailPost = ({route, navigation}) => {
-    const { post, onDelete, onHide, onEdit, styles } = route.params
+    const { post, onDelete, onHide, onEdit, styles, isCurrentLiked } = route.params
 
 
   return (
@@ -16,7 +16,7 @@ const DetailPost = ({route, navigation}) => {
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}> 
             <ScrollView>
 
-            <PurePost navigation={navigation} post={post} alwaysShowComment />
+            <PurePost isDetail isCurrentLiked={isCurrentLiked} navigation={navigation} post={post} alwaysShowComment />
             </ScrollView> 
             </KeyboardAvoidingView> 
         </View>

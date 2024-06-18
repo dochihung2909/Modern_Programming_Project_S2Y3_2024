@@ -1,10 +1,10 @@
 import { View, Text, Image, Dimensions, StyleSheet} from 'react-native'
 import React, {useContext, useEffect, useState, createRef} from 'react'
-import { MyDispatchContext, MyUserContext } from '../../configs/Contexts';    
+import { MyDispatchContext, MyUserContext, useAuth } from '../../configs/Contexts';    
  
 
 const Message = ({ message }) => {
-    const user = useContext(MyUserContext); 
+    const { user} = useAuth(); 
      
     // console.log(message)
 

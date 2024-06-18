@@ -5,16 +5,17 @@ import PurePost from './PurePost';
 
 
 
-export default Post = ({refreshing, post, navigation}) => {   
+export default Post = ({loadPosts, isCurrentLiked, refreshing, post, navigation}) => {   
       const goToDetail = () => { 
         navigation.navigate('DetailPost', {
             post: post,
+            isCurrentLiked: isCurrentLiked,
         })
       }
 
     return (
         <TouchableOpacity onPress={() => goToDetail()}>
-            <PurePost refreshing={refreshing} navigation={navigation} post={post} />
+            <PurePost loadPosts={loadPosts} isCurrentLiked={isCurrentLiked} refreshing={refreshing} navigation={navigation} post={post} />
         </TouchableOpacity>
     )
 }
