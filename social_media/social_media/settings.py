@@ -154,6 +154,7 @@ REST_FRAMEWORK = {
 
 CLIENT_ID = os.getenv('CLIENT_ID_OAUTH')
 CLIENT_SECRET = os.getenv('CLIENT_SECRET_OAUTH')
+OAUTH2_TOKEN_URL = '/o/token/'
 
 # OAUTH2_PROVIDER = {
 #     'OAUTH2_BACKEND_CLASS': 'oauth2_provider.oauth2_backends.JSONOAuthLibCore'
