@@ -1,11 +1,14 @@
 from django.contrib import admin
 from django.contrib.auth.models import Permission, Group
 from django.db.models import Count
+from django.db.models.functions import TruncMonth, TruncYear, TruncQuarter
 from django.http import JsonResponse
 from django.template.response import TemplateResponse
 from django.urls import path
 from django.utils.html import strip_tags
 from django.utils.safestring import mark_safe
+
+from core import dao
 from core.forms import PostForm, LikeCommentAdminForm
 from core.models import User, Post, Tag, Comment, LikePost, LikeComment, Role, LikeType, Room, Message, JoinRoom, Alumni
 
@@ -126,21 +129,26 @@ class MessageAdmin(admin.ModelAdmin):
     search_fields = ['content']
 
 
-class CustomerUserAdmin(UserAdmin):
-    change_form_template = 'change_form.html'
+class Survey(admin.ModelAdmin):
+    list_display = ['id', ]
 
 
 class MySocialMediaAdminSite(admin.AdminSite):
     site_header = 'eSocialMedia'
 
     def get_urls(self):
-        return [path('stats/', self.stats_view),
-                path('register_lecturer/', self.register_lecturer_view),] + super().get_urls()
+        return [
+            path('stats/', self.stats_view),
+            path('register_lecturer/', self.register_lecturer_view),
+        ] + super().get_urls()
 
     def stats_view(self, request):
-        post_user_stats = User.objects.annotate(c=Count('post__id')).values('id', 'username', 'c')
+        total_posts = Post.objects.count()
+        total_users = User.objects.count()
         return TemplateResponse(request, 'admin/stats.html', {
-            'post_user_stats': post_user_stats
+            'total_posts': total_posts,
+            'total_users': total_users,
+            'stats': dao.count_post_by_user()
         })
 
     def register_lecturer_view(self, request):
@@ -148,19 +156,13 @@ class MySocialMediaAdminSite(admin.AdminSite):
 
 
 class AlumniAdmin(admin.ModelAdmin):
-    list_display = ('username', 'first_name', 'last_name', 'code', 'email', 'is_active')
-    actions = ['approve_users', 'reject_users']
+    list_display = ['username', 'first_name', 'last_name', 'email', 'is_active']
+    actions = ['approve_users']
 
     def approve_users(self, request, queryset):
         queryset.update(is_active=True)
         self.message_user(request, "Selected users have been approved.")
-
-    def reject_users(self, request, queryset):
-        queryset.delete()
-        self.message_user(request, "Selected users have been rejected.")
-
     approve_users.short_description = "Approve selected users"
-    reject_users.short_description = "Reject selected users"
 
 
 admin_site = MySocialMediaAdminSite(name='iSocialMedia')
