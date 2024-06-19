@@ -1,10 +1,5 @@
-import os
-
-import requests
 from django.conf import settings
-from django.contrib.auth import authenticate
 from django.contrib.auth.decorators import user_passes_test
-from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
 from django.shortcuts import render, redirect
 from rest_framework import viewsets, permissions, generics, serializers, status, parsers
@@ -13,7 +8,6 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework_simplejwt.tokens import RefreshToken
 from core import serializers, paginators, perms
 from .models import Post, User, Comment, LikePost, LikeComment, Room, JoinRoom, LikeType, Role, Alumni
 
@@ -247,6 +241,17 @@ class UserViewSet(viewsets.ViewSet,
                                                                     context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @action(methods=['post'], url_path='check_password', detail=True)
+    def check_password(self, request):
+        user = request.user
+        current_password = request.data.get('current_password')
+        if not current_password:
+            return Response({'error': 'current_password required'})
+        if not user.check_password(current_password):
+            return Response({'error': 'Wrong password'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'status': 'Correct password'}, status=status.HTTP_200_OK)
+
+
 
 class CommentViewSet(viewsets.ViewSet,
                      generics.UpdateAPIView,
@@ -304,15 +309,28 @@ class CommentViewSet(viewsets.ViewSet,
 
     @action(methods=['patch'], detail=True, permission_classes=[perms.OwnerAuthenticated])
     def delete(self, request, pk):
+        # try:
+        #     comment = self.get_object()
+        #     comment.active = False
+        #     comment.save()
+        #     return Response({'status': 'Comment deactivated'})
+        # except Comment.DoesNotExist:
+        #     return Response(
+        #         {'error': 'Comment not found'},
+        #         status=status.HTTP_404_NOT_FOUND
+        #     )
         try:
             comment = self.get_object()
-            comment.active = False
-            comment.save()
-            return Response({'status': 'Comment deactivated'})
+            author_comment = comment.user()
+            author_post = comment.post.user()
+            if request.user == author_comment or request.user == author_post:
+                comment.active = False
+                comment.save()
+                return Response({'status': 'Comment deactivate'})
         except Comment.DoesNotExist:
             return Response(
                 {'error': 'Comment not found'},
-                status=status.HTTP_404_NOT_FOUND
+                status=status.HTTP_400_BAD_REQUEST
             )
 
 
@@ -515,155 +533,6 @@ class AlumniRegister(viewsets.ViewSet, generics.CreateAPIView):
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-
-# class LoginViewSet(viewsets.ViewSet):
-#     permission_classes = [permissions.AllowAny]
-# 
-#     def create(self, request):
-#         username = request.data.get('username')
-#         password = request.data.get('password')
-#         role_id = request.data.get('role_id')
-# 
-#         if not username:
-#             return Response({'error': 'username required'}, status=status.HTTP_400_BAD_REQUEST)
-#         if not password:
-#             return Response({'error': 'password required'}, status=status.HTTP_400_BAD_REQUEST)
-#         if not role_id:
-#             return Response({'error': 'role_id required'}, status=status.HTTP_400_BAD_REQUEST)
-# 
-#         try:
-#             user = User.objects.get(username=username)
-#         except User.DoesNotExist:
-#             return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
-# 
-#         if not user.check_password(password):
-#             return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
-# 
-#         if user.role is None or user.role.id != int(role_id):
-#             return Response({'error': 'Role does not match user'}, status=status.HTTP_400_BAD_REQUEST)
-# 
-#         if int(role_id) == 1:
-#             alumni = Alumni.objects.get(pk=user.id)
-#             serializer = serializers.AlumniSerializer(alumni)
-#         elif int(role_id) == 2:
-#             serializer = serializers.UserSerializer(user)
-#         else:
-#             return Response({'error': 'Invalid role_id'}, status=status.HTTP_400_BAD_REQUEST)
-# 
-#         refresh = RefreshToken.for_user(user)
-#         return Response({
-#             'refresh': str(refresh),
-#             'access': str(refresh.access_token),
-#             'user': serializer.data
-#         }, status=status.HTTP_200_OK)
-#         # token_data = {
-#         #     'username': username,
-#         #     'password': password,
-#         #     'client_id': settings.OAUTH2_CLIENT_ID,
-#         #     'client_secret': settings.OAUTH2_CLIENT_SECRET,
-#         #     'grant_type': 'password',
-#         # }
-#         # response = requests.post(request.build_absolute_uri(settings.OAUTH2_TOKEN_URL), data=token_data)
-#         # if response.status_code != 200:
-#         #     return Response({'error': 'Failed to obtain access token'}, status=response.status_code)
-#         # access_token = response.json().get('access_token')
-#         # return Response({
-#         #     'access_token': access_token,
-#         #     'user': serializer.data
-#         # }, status=status.HTTP_200_OK)
-#     #
-#     #     if role.id == 0 or role.id == 2:
-#     #         serializer = serializers.UserSerializer(user)
-#     #     elif role.id == 1:
-#     #         try:
-#     #             alumni = Alumni.objects.get(user=user)
-#     #         except Alumni.DoesNotExist:
-#     #             return Response({'error': 'Alumni profile not found'}, status=status.HTTP_400_BAD_REQUEST)
-#     #         serializer = serializers.AlumniSerializer(alumni)
-#     #     else:
-#     #         return Response({'error': 'Invalid role_id'}, status=status.HTTP_400_BAD_REQUEST)
-#     #
-#     #     # Prepare data for the token request
-#     #     token_data = {
-#     #         'username': username,
-#     #         'password': password,
-#     #         'client_id': settings.OAUTH2_CLIENT_ID,
-#     #         'client_secret': settings.OAUTH2_CLIENT_SECRET,
-#     #         'grant_type': 'password',
-#     #     }
-#     #
-#     #     # Make a request to the /o/token/ endpoint to get the access token
-#     #     response = requests.post(request.build_absolute_uri(settings.OAUTH2_TOKEN_URL), data=token_data)
-#     #
-#     #     if response.status_code != 200:
-#     #         return Response({'error': 'Failed to obtain access token'}, status=response.status_code)
-#     #
-#     #     # Include the access token in the response
-#     #     access_token = response.json().get('access_token')
-#     #
-#     #     return Response({
-#     #         'access_token': access_token,
-#     #         'user': serializer.data
-#     #     }, status=status.HTTP_200_OK)
-# 
-#     def create(self, request):
-#         username = request.data.get('username')
-#         password = request.data.get('password')
-#         role_id = request.data.get('role_id')
-# 
-#         if not username:
-#             return Response({'error': 'username required'}, status=status.HTTP_400_BAD_REQUEST)
-#         if not password:
-#             return Response({'error': 'password required'}, status=status.HTTP_400_BAD_REQUEST)
-#         if not role_id:
-#             return Response({'error': 'role_id required'}, status=status.HTTP_400_BAD_REQUEST)
-# 
-#         try:
-#             user = User.objects.get(username=username)
-#         except User.DoesNotExist:
-#             return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
-# 
-#         if not user.check_password(password):
-#             return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
-# 
-#         try:
-#             role = Role.objects.get(id=role_id)
-#         except Role.DoesNotExist:
-#             return Response({'error': 'Invalid role_id'}, status=status.HTTP_400_BAD_REQUEST)
-# 
-#         if role.id == 0 or role.id == 2:
-#             serializer = serializers.UserSerializer(user)
-#         elif role.id == 1:
-#             try:
-#                 alumni = Alumni.objects.get(user=user)
-#                 serializer = serializers.AlumniSerializer(alumni)
-#             except ObjectDoesNotExist:
-#                 return Response({'error': 'Alumni profile not found'}, status=status.HTTP_400_BAD_REQUEST)
-#         else:
-#             return Response({'error': 'Invalid role_id'}, status=status.HTTP_400_BAD_REQUEST)
-# 
-#         # Prepare data for the token request
-#         token_data = {
-#             'username': username,
-#             'password': password,
-#             'client_id': settings.OAUTH2_CLIENT_ID,
-#             'client_secret': settings.OAUTH2_CLIENT_SECRET,
-#             'grant_type': 'password',
-#         }
-# 
-#         # Make a request to the /o/token/ endpoint to get the access token
-#         response = requests.post(request.build_absolute_uri(settings.OAUTH2_TOKEN_URL), data=token_data)
-# 
-#         if response.status_code != 200:
-#             return Response({'error': 'Failed to obtain access token'}, status=response.status_code)
-# 
-#         # Include the access token in the response
-#         access_token = response.json().get('access_token')
-# 
-#         return Response({
-#             'access_token': access_token,
-#             'user': serializer.data
-#         }, status=status.HTTP_200_OK)
     
 class LoginViewSet(viewsets.ViewSet):
     permission_classes = [permissions.AllowAny]
@@ -721,6 +590,7 @@ def reject_user(request, user_id):
     user = Alumni.objects.get(id=user_id)
     user.delete()
     return redirect('pending_alumnis')
+
 
 
 
