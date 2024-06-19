@@ -30,48 +30,52 @@ const EditPassword = () => {
     })
 
     const handleUpdatePassword = async () => {
-        // Logic update password
-        // request oldpass 
-        console.log('update password')
-        // Get new user information 
-        const tokenRes = await APIs.post(endpoints['login']) 
-        const access_token = tokenRes.data.access_token
-        if (tokenRes.status == 200) {
-            const userRes = await authApi(access_token).get(endpoints['current_user'])
-            console.log(userRes.data)  
-            if (userRes.status == 200) {
-                updatePassword(userRes.data, access_token) 
-            }
-        } 
-
+         
+        if (!err) {
+            const tokenRes = await APIs.post(endpoints['login']) 
+            const new_access_token = tokenRes.data.access_token
+            if (tokenRes.status == 200) {
+                const userRes = await authApi(new_access_token).get(endpoints['current_user'])
+                console.log(userRes.data)  
+                if (userRes.status == 200) {
+                    updatePassword(userRes.data, new_access_token) 
+                }
+            } 
+            console.log('updated password') 
+          }   
     } 
 
-    const handleValidate = () => {
-        if (userPass.oldPassword == '') { 
-            setIsModalVisible(false)
-            setErr({
-                isErr: true,
-                errMessage: 'Mật khẩu cũ sai',
-                type: 0
-            })  
-        } else {
+    const handleValidate = async () => {
+        const access_token = await AsyncStorage.getItem('token')
+        // const checkPassword = await authApi(access_token).get('')
+        let form = new FormData()
+        form.append('password', userPass.oldPassword)
+        const checkPassRes = await authApi(access_token).post(endpoints['check_password'])
+        if (checkPassRes.status == 200) {  
             if (!validatePassword(userPass.newPassword)) {  
-                setErr({
-                    isErr: true,
-                    errMessage: 'Mật khẩu phải có ít nhất 8 ký tự, bao gồm ít nhất một chữ số, một chữ cái viết hoa và một chữ cái thường',
-                    type: 1
-                })   
-            } else {
-                if (userPass.newPassword !== userPass.confirmPassword) { 
-                    setErr({
-                        isErr: true,
-                        errMessage: 'Xác nhân mật khẩu sai',
-                        type: 2
-                    })   
-                } else {
-                    setIsModalVisible(true) 
-                }
-            }
+              setErr({
+                  isErr: true,
+                  errMessage: 'Mật khẩu phải có ít nhất 8 ký tự, bao gồm ít nhất một chữ số, một chữ cái viết hoa và một chữ cái thường',
+                  type: 1
+              })   
+          } else {
+              if (userPass.newPassword !== userPass.confirmPassword) { 
+                  setErr({
+                      isErr: true,
+                      errMessage: 'Xác nhân mật khẩu sai',
+                      type: 2
+                  })   
+              } else {
+                  setIsModalVisible(true) 
+              }
+          } 
+        } else {
+          setIsModalVisible(false)
+          setErr({
+              isErr: true,
+              errMessage: 'Mật khẩu cũ sai',
+              type: 0
+          }) 
         } 
     }
 
