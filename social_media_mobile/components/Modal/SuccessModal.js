@@ -13,7 +13,7 @@ const SuccessModal = ({confirmMessage, cancelMessage, handleConfirm, handleCance
   return (
     <Modal isVisible={isModalVisible}>
         <TouchableOpacity  
-            className={'bg-gray  h-[100vh] flex items-center justify-center'}
+            className={'bg-gray h-[100vh] flex items-center justify-center'}
             activeOpacity={1} 
             onPressOut={handleModal}
         >
@@ -23,11 +23,11 @@ const SuccessModal = ({confirmMessage, cancelMessage, handleConfirm, handleCance
                         {successMessage}
                     </Text>
                     <View className={'flex-row gap-2 items-center justify-center my-2'}>
-                        <Button className={('bg-blue-500 p-2 rounded-lg mt-4')} onPress={handleConfirm}>
+                        <Button className={('bg-blue-500 flex-1 p-2 rounded-lg mt-4')} onPress={handleConfirm}>
                             <Text  Text className={('text-white text-center')}>{confirmMessage}</Text> 
                         </Button>
                         {cancelMessage && 
-                            <Button className={('bg-green-500 p-2 rounded-lg mt-4')} onPress={handleCancel || handleModal}>
+                            <Button className={('bg-green-500  flex-1 p-2 rounded-lg mt-4')} onPress={handleCancel || handleModal}>
                                 <Text Text className={('text-white text-center')}>{cancelMessage}</Text> 
                             </Button>
                         }

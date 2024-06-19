@@ -1,4 +1,4 @@
-import { View, Text, Image, ScrollView, TouchableOpacity, RefreshControl } from 'react-native'
+import { View, Text, Image, ScrollView, TouchableOpacity, RefreshControl, Linking } from 'react-native'
 import React, {useContext, useState, useEffect, useCallback, useLayoutEffect} from 'react'
 import { Button, TextInput } from 'react-native-paper'
 import { MyDispatchContext, MyUserContext, useAuth } from '../../configs/Contexts';
@@ -249,6 +249,10 @@ export default function Profile({route, navigation}) {
     }   
   }
 
+  const handlePress = () => {
+    Linking.openURL(`mailto:${userInfo.email}`);
+  };
+
   
 
   return (
@@ -287,11 +291,15 @@ export default function Profile({route, navigation}) {
             </> 
             :
             <View className={'flex items-center w-full'}>
-              <TouchableOpacity onPress={() => navigation.navigate('EditProfile')} className={('bg-blue-500  w-[80%] items-center p-2 rounded-lg')}>
+              <TouchableOpacity onPress={() => navigation.navigate('EditProfile')} className={('my-2 bg-blue-500  w-[80%] items-center p-2 rounded-lg')}>
                 <Text className={('text-white')}>Chỉnh sửa thông tin cá nhân</Text>
               </TouchableOpacity>
 
-              <View className={'my-4 w-[80%] '}>
+              <TouchableOpacity onPress={() => navigation.navigate('EditPassword')} className={('my-2 bg-blue-500  w-[80%] items-center p-2 rounded-lg')}>
+                <Text className={('text-white')}>Sửa mật khẩu</Text>
+              </TouchableOpacity>
+
+              <View className={'my-2 w-[80%] '}>
                 <Button mode="contained" className={'text-white bg-blue-700 font-medium rounded-lg text-sm px-5 me-2 mb-2'} icon="logout" onPress={() => {
                   logout()
                   // navigation.navigate('Login')
@@ -304,12 +312,11 @@ export default function Profile({route, navigation}) {
 
           <Separate />    
           
-          <View className="bg-white p-4 mt-4">
-            <Text className="text-lg font-semibold">About</Text>
-            <Text className="mt-2">{userInfo?.bio}</Text>
-            <Text className="mt-4 text-lg font-semibold">Contact Information</Text>
-            <Text className="mt-2">Email: {userInfo?.email}</Text>
-            <Text className="mt-2">Phone: {userInfo?.phone}</Text>
+          <View className="bg-white p-4 my-2"> 
+            <Text className="mb-2 text-lg font-semibold">Thông tin liên hệ</Text>
+            <Text>
+              Email: <Text onPress={handlePress} className="text-blue-500 underline">{userInfo?.email}</Text>  
+            </Text>
           </View>  
  
           {

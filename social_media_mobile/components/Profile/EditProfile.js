@@ -15,6 +15,11 @@ const EditProfile = ({navigation}) => {
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [loading, setLoading] = useState(false)
   const { update } = useAuth() 
+  const [err, setErr] = useState({
+    isErr: false,
+    errMessage: '',
+    type: -1
+  })
 
   
   useEffect(() => {
@@ -22,6 +27,11 @@ const EditProfile = ({navigation}) => {
   }, [])
 
   const updateSate = (field, value) => {  
+    setErr({
+      isErr: false,
+      errMessage: '',
+      type: -1
+    })
     setUser(current => {
         return {...current, [field]: value}
     });
@@ -58,8 +68,8 @@ const EditProfile = ({navigation}) => {
                 form.append(key, usr[key]);
           }    
       } 
-      if (form._parts) {
-        console.log(form)
+      if (form._parts.length > 0) {
+        console.log(form._parts == [], form._parts.length)
         const res = await authApi(access_token).patch(endpoints['current_user'], form, {
           headers: {
             'Content-Type': 'multipart/form-data'
@@ -84,6 +94,11 @@ const EditProfile = ({navigation}) => {
       setLoading(false)
     }
   } 
+
+  const validateForm = () => {
+    
+  }
+
   
   if (loading) {
     return <LoadingScreen />; // Hoặc bất kỳ màn hình loading nào bạn muốn hiển thị
@@ -96,7 +111,7 @@ const EditProfile = ({navigation}) => {
           <Text className={('text-lg font-bold mb-4')}>Edit Profile</Text>
 
           <View className={('mb-4')}>
-            <Text className={('text-sm mb-2')}>Username</Text>
+            <Text className={('text-sm mb-2')}>Tên đăng nhập</Text>
             <TextInput
               className={('border p-2 rounded')}
               value={usr.username}
@@ -106,7 +121,7 @@ const EditProfile = ({navigation}) => {
           </View>
 
           <View className={('mb-4')}>
-            <Text className={('text-sm mb-2')}>First Name</Text>
+            <Text className={('text-sm mb-2')}>Họ</Text>
             <TextInput
               className={('border p-2 rounded')}
               value={usr.first_name}
@@ -116,10 +131,10 @@ const EditProfile = ({navigation}) => {
           </View>
 
           <View className={('mb-4')}>
-            <Text className={('text-sm mb-2')}>Last Name</Text>
+            <Text className={('text-sm mb-2')}>Tên</Text>
             <TextInput
               className={('border p-2 rounded')}
-              value={usr.last_name}
+              value={usr.last_name} 
               onChangeText={(t) => updateSate('last_name', t)}
               placeholder="Last Name"
             />
@@ -137,7 +152,7 @@ const EditProfile = ({navigation}) => {
           </View>
 
           <View className={('mb-4')}>
-            <Text className={('text-sm mb-2')}>Avatar</Text>
+            <Text className={('text-sm mb-2')}>Ảnh đại diện</Text>
             {usr.avatar && <Image source={{ uri: usr.avatar.uri || usr.avatar }} className={('w-24 h-24 rounded-full mb-4')} />}
             <Button title="Select Avatar" onPress={picker} />
           </View>

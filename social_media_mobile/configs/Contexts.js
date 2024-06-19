@@ -69,6 +69,11 @@ export const AuthProvider = ({ children }) => {
     const update = async (userData) => {
       dispatch({ type: 'update', payload: userData });
       // await AsyncStorage.setItem('user', JSON.stringify(userData));
+    }; 
+    
+    const updatePassword = async (userData, token) => {
+      dispatch({ type: 'update', payload: userData }); 
+      await AsyncStorage.setItem('token', token); 
     };
   
     const logout = async () => {
@@ -78,7 +83,7 @@ export const AuthProvider = ({ children }) => {
     };
   
     return (
-      <AuthContext.Provider value={{ user, login, logout, dispatch, update }}>
+      <AuthContext.Provider value={{ user, login, logout, dispatch, update, updatePassword }}>
         {children}
       </AuthContext.Provider>
     );

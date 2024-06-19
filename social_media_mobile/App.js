@@ -24,6 +24,7 @@ import LoadingScreen from './components/LoadingScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authApi, endpoints } from './configs/APIs';
 import EditProfile from './components/Profile/EditProfile';
+import EditPassword from './components/Profile/EditPassword';
 
 const Stack = createNativeStackNavigator();
 
@@ -77,7 +78,8 @@ const MyStack = () => {
         <Stack.Screen name='InputPost' component={InputPost} options={{title: 'Tạo bài viết', headerTitleAlign: 'center'}}/>   
         <Stack.Screen name='DetailPost' component={DetailPost} options={{title: 'Bài viết', headerTitleAlign: 'center'}}/>  
         <Stack.Screen name='UpdateInputComment' component={UpdateInputComment} options={{title: 'Sửa bình luận', headerTitleAlign: 'center'}}/>   
-        <Stack.Screen name='EditProfile' component={EditProfile} options={{title: 'Sửa bình luận', headerTitleAlign: 'center'}}/>   
+        <Stack.Screen name='EditProfile' component={EditProfile} options={{title: 'Sửa thông tin tài khoản', headerTitleAlign: 'center'}}/>   
+        <Stack.Screen name='EditPassword' component={EditPassword} options={{title: 'Đổi mật khẩu', headerTitleAlign: 'center'}}/>   
       </>
     }
       

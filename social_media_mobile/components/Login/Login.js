@@ -47,7 +47,7 @@ const Login = () => {
         "icon": "eye",
         "name": "password",  
         "secureTextEntry": true
-    }];  
+    }];   
 
     const handleLogin = async () => {
         updateSate('type', type) 
@@ -103,6 +103,11 @@ const Login = () => {
     //     console.log(type)
     // }, [type])
 
+    const validateForm = () => {
+        
+        handleLogin()
+    }
+
 
     useEffect(() => {
         const fetchToken =  async () => {
@@ -124,9 +129,9 @@ const Login = () => {
 
     return (
     <>   
-      <View className="mx-4 mt-[10%]"> 
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}> 
-            <ScrollView>
+    <KeyboardAvoidingView className="w-screen h-screen bg-white" behavior={Platform.OS === 'ios' ? 'padding' : 'height'}> 
+        <ScrollView>
+            <View className={'pt-[50%] mx-4'}>
                 <Text className='text-blue-500 text-center text-xl font-bold mb-4'>ĐĂNG NHẬP</Text> 
                 
                 <View className='z-10'>
@@ -149,25 +154,39 @@ const Login = () => {
                     </Provider> 
                 </View>
 
-                {fields.map(c => 
-                <TextInput className="my-[5px]" secureTextEntry={c.secureTextEntry} value={user[c.name]} onChangeText={t => updateSate(c.name, t)} key={c.name} label={c.label} right={<TextInput.Icon icon={c.icon} />} />)}
+                {fields.map(c =>   
+                    <TextInput
+                        className={`my-4 bg-white border-b-2 ${err && 'border-red-500'}` }
+                        value={user[c.name]}
+                        underlineColor="transparent"
+                        onChangeText={t => updateSate(c.name, t)}
+                        key={c.name} 
+                        label={c.label} 
+                        secureTextEntry={c.secureTextEntry}
+                        right={<TextInput.Icon icon={c.icon} />}
+                    />)
+                }  
 
-                <HelperText type="error" visible={err}>
+                <HelperText className='text-base mb-4' type="error" visible={err}>
                     Sai tên đăng nhập hoặc mật khẩu
                 </HelperText> 
 
                 <Button className='text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800' icon="account" loading={loading} mode="contained" onPress={handleLogin}>ĐĂNG NHẬP</Button>
                 <View className={'flex-row items-center'}>
-                     <Text className={'pr-2 text-base'}>Đăng ký tài khoản cựu sinh viên?</Text>
-                     <TouchableOpacity className={'text-base font-light text-gray-500 dark:text-gray-400'}  onPress={() => nav.navigate('Register')}>
+                    <Text className={'pr-2 text-base'}>Đăng ký tài khoản cựu sinh viên?</Text>
+                    <TouchableOpacity className={'text-base font-light text-gray-500 dark:text-gray-400'}  onPress={() => nav.navigate('Register')}>
                         <Text className='underline font-medium text-blue-600'>
                             Đăng ký
                         </Text>
                     </TouchableOpacity> 
                 </View> 
-            </ScrollView>
-        </KeyboardAvoidingView>  
-      </View>
+            </View> 
+        </ScrollView>
+    </KeyboardAvoidingView>  
+      {/* <View className="w-screen h-screen bg-white">
+        <View className='mx-4 pt-[30%]'>
+        </View> 
+      </View> */}
     </>
     ) 
 }

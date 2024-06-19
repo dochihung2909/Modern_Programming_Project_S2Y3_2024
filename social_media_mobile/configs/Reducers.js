@@ -3,7 +3,7 @@ export const MyUserReducer = (current, action) => {
         case "login":
             return action.payload;
         case "update":
-            return {...current, ...action.payload};
+            return {...current, ...action.payload}; 
         case "logout":
             return null;
     }

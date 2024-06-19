@@ -55,4 +55,14 @@ const calculateNewImageHeight = (originalWidth, originalHeight, screenWidth = Di
   return Math.round(newHeight);
 };
 
-export { formatDate, formatUrl, resizeImage, calculateNewImageHeight } 
+const validateEmail = (email) => {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email);
+};
+
+const validatePassword = (password) => {
+  const regex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
+  return regex.test(password);
+};
+
+export { formatDate, formatUrl, resizeImage, calculateNewImageHeight, validateEmail, validatePassword } 
