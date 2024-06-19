@@ -429,6 +429,12 @@ class LecturerRegister(viewsets.ViewSet, generics.CreateAPIView):
         if first_name == last_name:
             return Response({'error': 'first name and last name must be different'})
 
+        subject = 'Welcome to Social Meida App by HungTS and ngHung'
+        message = f'Chào mứng {first_name} {last_name} có {email} đến đây mật khẩu của bạn là @ou123. Hãy đổi mật khẩu trong vòng 30 ngày'
+        from_email = settings.EMAIL_HOST_USER
+        recipient_list = [email]
+        send_mail(subject, message, from_email, recipient_list, fail_silently=False)
+
         user = User.objects.create_user(
             username=username,
             password=password,
@@ -448,7 +454,7 @@ class AlumniRegister(viewsets.ViewSet, generics.CreateAPIView):
     serializer_class = serializers.AlumniSerializer
 
     def create(self, request):
-        required_fields = ['username', 'first_name', 'last_name', 'email', 'avatar']
+        required_fields = ['username', 'password', 'first_name', 'last_name', 'email', 'code', 'avatar']
         missing_fields = [field for field in required_fields if not request.data.get(field)]
 
         if missing_fields:
@@ -456,37 +462,48 @@ class AlumniRegister(viewsets.ViewSet, generics.CreateAPIView):
                             status=status.HTTP_400_BAD_REQUEST)
 
         username = request.data.get('username')
-        password = 'ou@123'
+        password = request.data.get('password')
+        code = request.data.get('code')
         first_name = request.data.get('first_name')
         last_name = request.data.get('last_name')
         email = request.data.get('email')
-        avatar = request.FILES.get('avatar')
-        print(avatar)
-        role = Role.objects.get(pk=2)
+        avatar = request.đata.get('avatar')
+        cover_photo = None
+        role = Role.objects.get(pk=1)
+        is_active=False
 
         if User.objects.filter(username=username).exists():
             return Response({'error': 'username already exists'}, status=status.HTTP_400_BAD_REQUEST)
-        # if User.objects.filter(email=email).exists():
-        #     return Response({'error': 'email already exists'}, status=status.HTTP_400_BAD_REQUEST)
+        if Alumni.objects.filter(code=code).exists():
+            return Response({'error': 'code already exists'}, status=status.HTTP_400_BAD_REQUEST)
+        if User.objects.filter(email=email).exists():
+            return Response({'error': 'email already exists'}, status=status.HTTP_400_BAD_REQUEST)
         if first_name == last_name:
             return Response({'error': 'first name and last name must be different'})
+        if len(password) < 8:
+            return Response({'error': 'Password must be at least 8 characters long.'})
+        if sum(c.isdigit() for c in password) < 1:
+            return Response({'error': 'Password must contain at least 1 number.'})
+        if not any(c.isupper() for c in password):
+            return Response({'error': 'Password must contain at least 1 uppercase letter.'})
+        if not any(c.islower() for c in password):
+            return Response({'error': 'Password must contain at least 1 lowercase letter.'})
+        if (password and username) and (username in password):
+            raise serializers.ValidationError("Password cannot contain the username.")
 
-        subject = 'Welcome to Social Meida App by HungTS and ngHung'
-        message = f'Chào mứng {first_name} {last_name} có {email} đến đây mật khẩu của bạn là @ou123. Hãy đổi mật khẩu trong vòng 30 ngày'
-        from_email = settings.EMAIL_HOST_USER
-        recipient_list = [email]
-        send_mail(subject, message, from_email, recipient_list, fail_silently=False)
-
-        user = User.objects.create_user(
+        alumni = Alumni.objects.create_user(
             username=username,
             password=password,
+            code=code,
             first_name=first_name,
             last_name=last_name,
             email=email,
             avatar=avatar,
-            role=role
+            cover_photo=cover_photo,
+            role=role,
+            is_active=False
         )
-        serializer = serializers.UserSerializer(user)
+        serializer = serializers.AlumniSerializer(alumni)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
