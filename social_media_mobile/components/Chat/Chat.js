@@ -50,7 +50,7 @@ const Chat = ({navigation}) => {
   }, []); 
 
   return (
-    <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}> 
+    <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>  
       {rooms.length > 0 ? rooms?.map(room => (
         <TouchableOpacity key={room?.room.id} onPress={() => navigation.navigate('Room', {id: room?.room.id})} className={('bg-blue-500 w-[100%] my-2 items-center p-2 rounded-lg')}>
           <Text className={('text-white text-lg')}>{room?.room.title}</Text>
@@ -58,13 +58,13 @@ const Chat = ({navigation}) => {
         </TouchableOpacity>
       ))
       : 
-      <View className={'flex items-center mt-6 justify-center'}>
-        <Text className={'text-lg text-blue-500'}>Không có phòng chat nào cả</Text> 
-        {/* <TouchableOpacity>
-          <Text className={''}>Tìm kiếm người trò chuyện</Text>
-        </TouchableOpacity> */}
-      </View>
-    } 
+        <View className={'flex items-center mt-6 justify-center'}>
+          <Text className={'text-lg text-blue-500'}>Không có phòng chat nào cả</Text> 
+          {/* <TouchableOpacity>
+            <Text className={''}>Tìm kiếm người trò chuyện</Text>
+          </TouchableOpacity> */}
+        </View>
+      } 
     </ScrollView>
   )
 }

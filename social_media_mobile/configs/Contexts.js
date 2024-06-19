@@ -23,8 +23,7 @@ export const ReactionProvider = ({ children }) => {
           },
           title: r.name
         } 
-        reacts = [...reacts, newR]
-        console.log(reacts)
+        reacts = [...reacts, newR] 
       } 
       setReactions(reacts);
     } catch (error) {
@@ -77,9 +76,11 @@ export const AuthProvider = ({ children }) => {
     };
   
     const logout = async () => {
-      dispatch({ type: 'logout' });
-      console.log('logged out');
-      await AsyncStorage.removeItem('token');
+      await AsyncStorage.removeItem('token'); 
+      setTimeout(() =>{
+        dispatch({ type: 'logout' }); 
+        console.log('logged out'); 
+      }, 100)
     };
   
     return (

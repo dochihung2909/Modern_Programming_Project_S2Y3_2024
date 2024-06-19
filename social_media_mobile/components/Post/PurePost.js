@@ -72,7 +72,7 @@ const PurePost = ({isDetail, isCurrentLiked, loadPosts, post, alwaysShowComment 
     };  
 
     const handleNavigateUser = (userId) => { 
-        console.log(userId)
+        // console.log(userId)
         if (user.id != userId) {
             navigation.navigate('User_Profile', {
                 userId: userId
@@ -91,6 +91,7 @@ return (
                 </TouchableOpacity>
                 {post?.user.id == user.id &&
                     <DropdownMenu
+                        isOwner={post?.user.id == user.id}
                         onEdit={() => handleEditPost(post?.id)}
                         onDelete={() => setIsModalVisible(true)}
                         onHide={() => handleHidePost(post?.id)}
@@ -132,7 +133,7 @@ return (
                     <Text className={('ml-2 text-base ')}>Share</Text>
                 </TouchableOpacity>
             </View>
-            {(showComments || alwaysShowComment) && <Comment navigation={navigation} postId={post?.id} />}
+            {(showComments || alwaysShowComment) && <Comment navigation={navigation} postId={post?.id} postOwner={post.user.id} />}
             <AlertModal isModalVisible={isModalVisible} setIsModalVisible={setIsModalVisible} alertMessage={'Hành động này sẽ xoá vĩnh viễn bài viết này. Bạn có tiếp tục chứ?'} confirmMessage={'Xoá'} cancelMessage={'Huỷ'} handleConfirm={() => handleDeletePost(post.id)} ></AlertModal>
         </View>
         <Separate />

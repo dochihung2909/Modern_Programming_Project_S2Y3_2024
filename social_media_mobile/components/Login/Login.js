@@ -12,17 +12,31 @@ const Login = () => {
     const [type, setType] = useState(1) 
     const [user, setUser] = useState({}) 
     const [showDropdown, setShowDropdown]  = useState(false);
-    const [err, setErr] = React.useState(false);
+    const [err, setErr] = React.useState({
+        isErr: false,
+        errMessage: ''
+    });
     const [loading, setLoading] = React.useState(false); 
     const nav = useNavigation();
     const { login } = useAuth();
 
     const client_id = process.env.CLIENT_ID 
-    const client_secret = process.env.CLIENT_SECRET
+    const client_secret = process.env.CLIENT_SECRET 
+    
+    useEffect(() => {
+        updateSate('role_id',type)
+    }, [])
 
     
+    useEffect(() => {
+        console.log(type)
+    }, [type])
 
     const typeList = [ 
+        {
+            'label': 'Quản trị viên',
+            'value': 0
+        },
         {
             'label': 'Cựu sinh viên',
             'value': 1
@@ -30,10 +44,6 @@ const Login = () => {
         {
             'label': 'Giảng viên',
             'value': 2
-        },
-        {
-            'label': 'Quản trị viên',
-            'value': 3
         } 
     ]
 
@@ -47,13 +57,23 @@ const Login = () => {
         "icon": "eye",
         "name": "password",  
         "secureTextEntry": true
-    }];   
+    }];    
 
-    const handleLogin = async () => {
-        updateSate('type', type) 
+    const handleLogin = async () => { 
         setLoading(true);
-        try { 
-            const res = await APIs.post(endpoints['login'],
+        try {   
+            console.log(user.role_id)
+            const res = await APIs.post(endpoints['login'], new URLSearchParams({  
+                    ...user
+                }), 
+                {
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                    }
+                }
+            ) 
+            if (res.status == 200) {
+                const tokenRes = await APIs.post(endpoints['get_token'],
                 new URLSearchParams({
                     'grant_type': 'password',
                     'client_id': client_id,
@@ -65,27 +85,31 @@ const Login = () => {
                         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
                     }
                 }
-            );  
-            if (res.status == 200) {
-                console.info(user) 
-                await AsyncStorage.setItem("token", res.data.access_token);
-                console.info(res.data.access_token); 
-                
-                setTimeout(async () => {
-                    let user = await authApi(res.data.access_token).get(endpoints['current_user']);
-                    console.info(user.data);
+                );  
+                if (tokenRes.status == 200) {
+                    console.info(user) 
+                    await AsyncStorage.setItem("token", tokenRes.data.access_token);
+                    console.info(tokenRes.data.access_token); 
+                    
+                    setTimeout(async () => {
+                        let user = await authApi(tokenRes.data.access_token).get(endpoints['current_user']);
+                        console.info(user.data);
 
-                    await login(user.data)
-                    console.log('navigate')
-                    nav.navigate('MyTab');
-                }, 100);
-                setErr(false)
-            }  
+                        await login(user.data)
+                        console.log('navigate')
+                        nav.navigate('MyTab');
+                    }, 100); 
+                }  
+            }
+            
             
             
         } catch (ex) {
             console.error(ex);
-            setErr(true)
+            setErr({
+                isErr: true,
+                errMessage:'Sai loại đăng nhập hoặc tên đăng nhập hoặc mật khẩu'
+            })
         } finally {
             setLoading(false);
         }   
@@ -93,7 +117,10 @@ const Login = () => {
  
 
     const updateSate = (field, value) => { 
-        setErr(false)
+        setErr({
+            isErr:false,
+            errMessage: ''
+        })
         setUser(current => {
             return {...current, [field]: value}
         });
@@ -140,7 +167,10 @@ const Login = () => {
                             label='Loại đăng nhập'
                             mode='outlined'
                             value={type}
-                            setValue={setType}
+                            setValue={(t) => {
+                                setType(t)
+                                updateSate('role_id',t)
+                            }}
                             list={typeList}
                             visible={showDropdown}
                             showDropDown={() => setShowDropdown(true)}
@@ -148,7 +178,7 @@ const Login = () => {
                             dropDownStyle={{
                                 width:'100%', 
                                 top: '10%',  
-                                left: '0'
+                                left: '0',
                             }}
                         />                
                     </Provider> 
@@ -156,7 +186,7 @@ const Login = () => {
 
                 {fields.map(c =>   
                     <TextInput
-                        className={`my-4 bg-white border-b-2 ${err && 'border-red-500'}` }
+                        className={`my-4 bg-white border-b-2 ${err.isErr && 'border-red-500'}` }
                         value={user[c.name]}
                         underlineColor="transparent"
                         onChangeText={t => updateSate(c.name, t)}
@@ -167,11 +197,11 @@ const Login = () => {
                     />)
                 }  
 
-                <HelperText className='text-base mb-4' type="error" visible={err}>
-                    Sai tên đăng nhập hoặc mật khẩu
+                <HelperText className='text-base mb-4' type="error" visible={err.isErr}>
+                    {err.errMessage}
                 </HelperText> 
 
-                <Button className='text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800' icon="account" loading={loading} mode="contained" onPress={handleLogin}>ĐĂNG NHẬP</Button>
+                <Button className='text-white bg-blue-700   font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2' icon="account" loading={loading} mode="contained" onPress={handleLogin}>ĐĂNG NHẬP</Button>
                 <View className={'flex-row items-center'}>
                     <Text className={'pr-2 text-base'}>Đăng ký tài khoản cựu sinh viên?</Text>
                     <TouchableOpacity className={'text-base font-light text-gray-500 dark:text-gray-400'}  onPress={() => nav.navigate('Register')}>

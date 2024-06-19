@@ -12,8 +12,7 @@ import { calRatio, formatUrl, resizeImage } from '../../dao';
 
 const InputPost = ({route, navigation}) => { 
   const {handleLoadPost, user, post} = route.params
-  console.log(handleLoadPost, user, post)
-  const [imageSize, setImageSize] = useState({width: 0, height: 0})
+  // console.log(handleLoadPost, user, post) 
   const [content, setContent] = useState('');
   const [image, setImage] = useState(null);
   const [tags, setTags] = useState([]);
@@ -60,23 +59,27 @@ const InputPost = ({route, navigation}) => {
 
   const handleUpdatePost = async () => {
     const access_token = await AsyncStorage.getItem('token')  
-    setLoading(true);
+    console.log('update')
+    setLoading(true); 
     
     try {
       let form = new FormData()
-
+      console.log(image)
       form.append('tag', tagInput) 
       form.append('content', content)
-      form.append('image', {
-          uri: image.uri,
-          name: image.fileName,
-          type: Mime.getType(image.uri)
-      }) 
-      console.info(form)
+      if (image.fileName) {
+        form.append('image', {
+            uri: image.uri,
+            name: image.fileName,
+            type: Mime.getType(image.uri)
+        }) 
+      }
+      
+      console.info(post)
 
       const res = await authApi(access_token).patch(endpoints['post_by_id'](post.id), form, {
         headers: {
-          "Content-Type": 'multipart/form-data'
+          'Content-Type': 'multipart/form-data'
         }
       })
       console.log(res.data) 

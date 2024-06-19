@@ -3,8 +3,9 @@ import axios from 'axios'
 const BASE_URL = 'https://hungts.pythonanywhere.com/'
 
 export const endpoints = {
-    'register': '/users/',
-    'login': '/o/token/',
+    'register': '/register_alumni/',
+    'login': '/login/',
+    'get_token': '/o/token/',
     'current_user': '/users/current-user/',
     'posts': '/posts/',
     'users_id': (id) => `/users/${id}/`,
@@ -29,7 +30,8 @@ export const endpoints = {
     'post_likes': (id) => `/posts/${id}/likes/`,
     'post_by_id': (id) => `/posts/${id}/`,
     'posts_user_liked_by_id': (id) => `/users/${id}/posts_liked/`,
-    'chat_with_target_user': `/users/current-user/add_room/`
+    'chat_with_target_user': `/users/current-user/add_room/`,
+    'all_users': `/users/`
 }
 
 export const authApi = (token) => {

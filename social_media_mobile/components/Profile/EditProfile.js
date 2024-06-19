@@ -8,6 +8,7 @@ import { authApi, endpoints } from '../../configs/APIs';
 import Mime from 'mime';
 import LoadingScreen from '../LoadingScreen';
 import AlertModal from '../Modal/AlertModal';
+import { validateEmail } from '../../dao';
 
 const EditProfile = ({navigation}) => { 
   const { user } = useAuth()  
@@ -68,6 +69,7 @@ const EditProfile = ({navigation}) => {
                 form.append(key, usr[key]);
           }    
       } 
+      console.log(form)
       if (form._parts.length > 0) {
         console.log(form._parts == [], form._parts.length)
         const res = await authApi(access_token).patch(endpoints['current_user'], form, {
@@ -79,7 +81,7 @@ const EditProfile = ({navigation}) => {
       }          
       console.log('Update success')
       setIsModalVisible(false) 
-      navigation.goBack()
+      navigation.navigate('Profile')
     } catch (err) {
       console.error(err) 
       setIsModalVisible(false)
@@ -95,7 +97,25 @@ const EditProfile = ({navigation}) => {
     }
   } 
 
-  const validateForm = () => {
+  const validateForm = () => { 
+    if (!usr.username || !usr.email || !usr.avatar) {
+      console.log('heh')
+      setErr({
+        isErr: true,
+        errMessage: 'Không được để chống thông tin',
+        type: 1
+      })
+    } else {
+      if (!validateEmail(usr.email)) {
+        setErr({
+          isErr: true,
+          errMessage: 'Email không hợp lệ',
+          type: 1
+        })
+      } else {
+        setIsModalVisible(true)
+      }
+    }
     
   }
 
@@ -157,7 +177,7 @@ const EditProfile = ({navigation}) => {
             <Button title="Select Avatar" onPress={picker} />
           </View>
 
-          <TouchableOpacity onPress={() => setIsModalVisible(true)} className={('bg-blue-500 p-4 rounded')}>
+          <TouchableOpacity onPress={validateForm} className={('bg-blue-500 p-4 rounded')}>
             <Text className={('text-center text-white font-bold')}>Save Changes</Text>
           </TouchableOpacity> 
           <SuccessModal handleConfirm={handleUpdateProfile} handleCancel={() => setIsModalVisible(false)} isModalVisible={isModalVisible} setIsModalVisible={setIsModalVisible} successMessage={'Lưu thông tin mới'} confirmMessage={'Lưu'} cancelMessage={'Huỷ'}></SuccessModal>

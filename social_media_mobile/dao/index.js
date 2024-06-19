@@ -65,4 +65,15 @@ const validatePassword = (password) => {
   return regex.test(password);
 };
 
-export { formatDate, formatUrl, resizeImage, calculateNewImageHeight, validateEmail, validatePassword } 
+function adjustImageTo16x9(screenWidth) {
+  const aspectRatio = 16 / 9;
+  const newWidth = screenWidth;
+  const newHeight = screenWidth / aspectRatio;
+
+  return {
+    width: newWidth,
+    height: newHeight
+  };
+}
+
+export { formatDate, formatUrl, resizeImage, calculateNewImageHeight, validateEmail, validatePassword, adjustImageTo16x9 } 

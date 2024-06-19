@@ -18,7 +18,7 @@ const SuccessModal = ({confirmMessage, cancelMessage, handleConfirm, handleCance
             onPressOut={handleModal}
         >
             <TouchableWithoutFeedback>
-                <View className={'bg-white p-8 rounded-lg'}>
+                <View className={'bg-white w-[90%] py-8 px-4 rounded-lg'}>
                     <Text className={'text-lg font-bold my-2 text-center'}>
                         {successMessage}
                     </Text>

@@ -11,7 +11,7 @@ import AlertModal from '../Modal/AlertModal';
 import InputComment from './InputComment';
 import { useFocusEffect } from '@react-navigation/native';
 
-const Comment = ({ postId, navigation }) => {
+const Comment = ({ postId, navigation, postOwner }) => {
     const { user} = useAuth()  
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState('');  
@@ -130,12 +130,13 @@ const Comment = ({ postId, navigation }) => {
                         <Image source={{ uri: comment.user.avatar || 'https://img.freepik.com/free-psd/3d-illustration-person-with-sunglasses_23-2149436188.jpg' }} className={('w-10 h-10 rounded-full mr-4')} />
                         <Text className={('font-bold text-lg')}>{`${comment.user.first_name} ${comment.user.last_name} `}</Text>
                     </TouchableOpacity> 
-                    {comment.user.id == user.id && 
+                    {(comment.user.id == user.id || postOwner == user.id) && 
                       <DropdownMenu
                           isComment
+                          isOwner={comment.user.id == user.id}
                           onEdit={() => handleEditComment(comment, comment.user)}
                           onDelete={() => handleShowConfirmDelComment(comment.id)}
-                          onHide={() => handleHideComment(comment.id)}
+                          // onHide={() => handleHideComment(comment.id)}
                       ></DropdownMenu>
                     }
                     

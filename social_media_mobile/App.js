@@ -25,6 +25,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authApi, endpoints } from './configs/APIs';
 import EditProfile from './components/Profile/EditProfile';
 import EditPassword from './components/Profile/EditPassword';
+import Setting from './components/Profile/Setting';
+import EditCoverPhoto from './components/Profile/EditCoverPhoto';
+import Group from './components/Group/Group';
+import CreateGroupChat from './components/Group/CreateGroupChat';
 
 const Stack = createNativeStackNavigator();
 
@@ -44,6 +48,7 @@ const MyTab = () => {
         <>
           <Tab.Screen name="Home" component={Home} options={{ title: "Trang chủ", tabBarIcon: () => <Icon size={30} color="black" source="home-outline" />}} /> 
           <Tab.Screen name="Notification" component={Notification} options={{tabBarIcon: () => <Icon size={30} color="black" source="bell-outline" />}} /> 
+          <Tab.Screen name="Group" component={Group} options={{tabBarIcon: () => <Icon size={30} color="black" source="group" />}} /> 
           <Tab.Screen name="Profile" component={Profile} options={{title: "Hồ sơ", tabBarIcon: () => <Icon size={30} color="black" source="account-outline" />}} />
           <Tab.Screen name="Chat" component={Chat} options={{tabBarIcon: () => <Icon size={30} color="black" source="chat-outline" />}} />   
         </> 
@@ -80,6 +85,9 @@ const MyStack = () => {
         <Stack.Screen name='UpdateInputComment' component={UpdateInputComment} options={{title: 'Sửa bình luận', headerTitleAlign: 'center'}}/>   
         <Stack.Screen name='EditProfile' component={EditProfile} options={{title: 'Sửa thông tin tài khoản', headerTitleAlign: 'center'}}/>   
         <Stack.Screen name='EditPassword' component={EditPassword} options={{title: 'Đổi mật khẩu', headerTitleAlign: 'center'}}/>   
+        <Stack.Screen name='Setting' component={Setting} options={{title: 'Cài đặt', headerTitleAlign: 'center'}}/>   
+        <Stack.Screen name='EditCoverPhoto' component={EditCoverPhoto} options={{title: 'Đổi ảnh bìa', headerTitleAlign: 'center'}}/>   
+        <Stack.Screen name='CreateGroupChat' component={CreateGroupChat} options={{title: 'Tạo nhóm', headerTitleAlign: 'center'}}/>   
       </>
     }
       
