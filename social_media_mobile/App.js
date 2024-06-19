@@ -48,7 +48,7 @@ const MyTab = () => {
         <>
           <Tab.Screen name="Home" component={Home} options={{ title: "Trang chủ", tabBarIcon: () => <Icon size={30} color="black" source="home-outline" />}} /> 
           <Tab.Screen name="Notification" component={Notification} options={{tabBarIcon: () => <Icon size={30} color="black" source="bell-outline" />}} /> 
-          <Tab.Screen name="Group" component={Group} options={{tabBarIcon: () => <Icon size={30} color="black" source="group" />}} /> 
+          <Tab.Screen name="Group" component={Group} options={{tabBarIcon: () => <Icon size={30} color="black" source="account-group-outline" />}} /> 
           <Tab.Screen name="Profile" component={Profile} options={{title: "Hồ sơ", tabBarIcon: () => <Icon size={30} color="black" source="account-outline" />}} />
           <Tab.Screen name="Chat" component={Chat} options={{tabBarIcon: () => <Icon size={30} color="black" source="chat-outline" />}} />   
         </> 

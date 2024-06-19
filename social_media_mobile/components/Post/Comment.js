@@ -11,7 +11,7 @@ import AlertModal from '../Modal/AlertModal';
 import InputComment from './InputComment';
 import { useFocusEffect } from '@react-navigation/native';
 
-const Comment = ({ postId, navigation, postOwner }) => {
+const Comment = ({ post, navigation, postOwner }) => {
     const { user} = useAuth()  
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState('');  
@@ -33,7 +33,7 @@ const Comment = ({ postId, navigation, postOwner }) => {
 
     const loadComments = async () => {
         const access_token = await AsyncStorage.getItem('token')
-        const res = await authApi(access_token).get(endpoints['posts_comments'](postId))  
+        const res = await authApi(access_token).get(endpoints['posts_comments'](post.id))  
         console.log(res.data)
         setComments(res.data) 
         
@@ -43,31 +43,33 @@ const Comment = ({ postId, navigation, postOwner }) => {
     }, []) 
 
       const handleAddComment = async () => {
-        if (newComment.trim()) {
-          const access_token = await AsyncStorage.getItem('token')
-          setLoading(true)
-          try {
-            let form = new FormData()
-  
-            form.append('content', newComment.trim())
-            console.info(form)
-            const res = await authApi(access_token).post(endpoints['add_comment'](postId), form, {
-              headers: {
-                "Content-Type": 'multipart/form-data'
+        if (!post.block_comment) {
+          if (newComment.trim()) {
+            const access_token = await AsyncStorage.getItem('token')
+            setLoading(true)
+            try {
+              let form = new FormData()
+    
+              form.append('content', newComment.trim())
+              console.info(form)
+              const res = await authApi(access_token).post(endpoints['add_comment'](post.id), form, {
+                headers: {
+                  "Content-Type": 'multipart/form-data'
+                }
+              })
+              console.log(res.data)
+              if (res.status === 201) {
+                console.log("Add comment success")
+                const newCommentData = {...res.data};
+                setComments([...comments, newCommentData]);
+                setNewComment('');
               }
-            })
-            console.log(res.data)
-            if (res.status === 201) {
-              console.log("Add comment success")
-              const newCommentData = {...res.data};
-              setComments([...comments, newCommentData]);
-              setNewComment('');
-            }
-          } catch (error) {
-            console.info(error)
-          } finally {
-            setLoading(false)
-          }    
+            } catch (error) {
+              console.info(error)
+            } finally {
+              setLoading(false)
+            }    
+          } 
         }
       }; 
 
@@ -157,7 +159,10 @@ const Comment = ({ postId, navigation, postOwner }) => {
               </View>
             ))}
         </View>  
-      <InputComment user={user} setNewComment={setNewComment} newComment={newComment} handleAddComment={handleAddComment} loading={loading} ></InputComment> 
+      {
+        !post.block_comment &&  
+        <InputComment user={user} setNewComment={setNewComment} newComment={newComment} handleAddComment={handleAddComment} loading={loading} ></InputComment> 
+      }
       <AlertModal isModalVisible={showDelModal} setIsModalVisible={setShowDelModal} handleConfirm={handleDeleteComment} alertMessage={'Hành động này sẽ xoá vĩnh viễn bình luận của bạn. Bạn có muốn tiếp tục?'} confirmMessage={'Xoá'} cancelMessage={'Huỷ'}></AlertModal> 
 
     </View>

@@ -14,12 +14,12 @@ import {calculateNewImageHeight, resizeImage} from '../../dao/index'
 import AlertModal from '../Modal/AlertModal';
 
 const PurePost = ({isDetail, isCurrentLiked, loadPosts, post, alwaysShowComment = false, navigation}) => { 
-    // console.log(isCurrentLiked, post.id)
+    // console.log(isCurrentLiked, post.id) 
     const [showComments, setShowComments] = useState(false); 
     const [containerWidth, setContainerWidth] = useState(0); 
     const [imageHeight, setImageHeight] = useState(0);
     const [isModalVisible, setIsModalVisible] = useState(false); 
-    
+    const [isDelete, setIsDelete] = useState(false); 
     const { user } = useAuth()
     
     const { width } = useWindowDimensions();
@@ -37,7 +37,7 @@ const PurePost = ({isDetail, isCurrentLiked, loadPosts, post, alwaysShowComment 
     };
     
     //   Delete post
-    const handleDeletePost = async (postId) => { 
+    const handleDeletePost = async (postId) => {  
         console.log(`Delete post with ID: ${postId}`);
         const access_token = await AsyncStorage.getItem('token')
         let form = new FormData() 
@@ -67,8 +67,41 @@ const PurePost = ({isDetail, isCurrentLiked, loadPosts, post, alwaysShowComment 
     };   
      
     
-    const handleHidePost = (postId) => {
-        console.log(`Hide post with ID: ${postId}`);
+    const handleBlockComment = async (post) => {
+        console.log(post.block_comment)
+        const access_token = await AsyncStorage.getItem('token')
+        if (!post.block_comment) {
+            let form = new FormData() 
+
+            form.append('block_comment', true)
+            const res = await authApi(access_token).patch(endpoints['post_by_id'](post.id), form, {
+                headers: {
+                    "Content-Type": 'multipart/form-data'
+                }
+            })
+            console.log(res.data)
+            if (res.status == 200) {
+                console.log('Blocked success')   
+                loadPosts()
+            }
+        } else {
+            let form = new FormData() 
+
+            form.append('block_comment', false)
+            const res = await authApi(access_token).patch(endpoints['post_by_id'](post.id), form, {
+                headers: {
+                    "Content-Type": 'multipart/form-data'
+                }
+            })
+            console.log(res.data)
+            if (res.status == 200) {
+                console.log('Blocked success')   
+                loadPosts()
+            }
+        }
+        
+        
+
     };  
 
     const handleNavigateUser = (userId) => { 
@@ -91,10 +124,14 @@ return (
                 </TouchableOpacity>
                 {post?.user.id == user.id &&
                     <DropdownMenu
+                        isCloseCmt={post.block_comment}
                         isOwner={post?.user.id == user.id}
                         onEdit={() => handleEditPost(post?.id)}
-                        onDelete={() => setIsModalVisible(true)}
-                        onHide={() => handleHidePost(post?.id)}
+                        onDelete={() => {
+                            setIsModalVisible(true)
+                            setIsDelete(true)
+                        }}
+                        onHide={() => setIsModalVisible(true)}
                     ></DropdownMenu>
                 }
                 
@@ -133,8 +170,8 @@ return (
                     <Text className={('ml-2 text-base ')}>Share</Text>
                 </TouchableOpacity>
             </View>
-            {(showComments || alwaysShowComment) && <Comment navigation={navigation} postId={post?.id} postOwner={post.user.id} />}
-            <AlertModal isModalVisible={isModalVisible} setIsModalVisible={setIsModalVisible} alertMessage={'Hành động này sẽ xoá vĩnh viễn bài viết này. Bạn có tiếp tục chứ?'} confirmMessage={'Xoá'} cancelMessage={'Huỷ'} handleConfirm={() => handleDeletePost(post.id)} ></AlertModal>
+            {((showComments || alwaysShowComment)) && <Comment navigation={navigation} post={post} postOwner={post.user.id} />}
+            <AlertModal isModalVisible={isModalVisible} setIsModalVisible={setIsModalVisible} alertMessage={isDelete ? 'Hành động này sẽ xoá vĩnh viễn bài viết này. Bạn có tiếp tục chứ?' : !post.block_comment ? 'Hành động này sẽ khoá bình luận bài viết này. Bạn có tiếp tục chứ?' : 'Xác nhận mở bình luận'} confirmMessage={isDelete ? 'Xoá' : !post.block_comment ? 'Khoá' : 'Mở'} cancelMessage={'Huỷ'} handleConfirm={isDelete ? (() => handleDeletePost(post.id)) : (() => handleBlockComment(post))} ></AlertModal>
         </View>
         <Separate />
     </>
