@@ -6,6 +6,8 @@ class UserSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         rep = super().to_representation(instance)
         rep['avatar'] = instance.avatar.url
+        if instance.cover_photo:
+            rep['cover_photo'] = instance.cover_photo.url
 
         return rep
 
@@ -13,7 +15,17 @@ class UserSerializer(serializers.ModelSerializer):
         if user.avatar:
             request = self.context.get('request')
             rep = super().to_representation(user)
-            rep['avatar'] = user.avatar.url
+            if request.avatar:
+                rep['avatar'] = user.avatar.url
+            if request:
+                return request.build_absolute_uri(rep)
+            return rep
+
+    def get_cover_photo(self, user):
+        if user.avatar:
+            request = self.context.get('request')
+            rep = super().to_representation(user)
+            rep['cover_photo'] = user.cover_photo.url
             if request:
                 return request.build_absolute_uri(rep)
             return rep
@@ -35,6 +47,14 @@ class UserSerializer(serializers.ModelSerializer):
                 'write_only': True
             }
         }
+
+
+class UserDetailSerializer(UserSerializer):
+    # cover_photo = serializers.ModelSerializer(source='user.cover_phto', read_only=True)
+    class Meta:
+        model = UserSerializer.Meta.model
+        # fields = UserSerializer.Meta.fields + ['cover_photo']
+        fields = UserSerializer.Meta.fields
 
 
 class UserCustomSerializer(serializers.ModelSerializer):

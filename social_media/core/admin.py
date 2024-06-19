@@ -7,7 +7,7 @@ from django.urls import path
 from django.utils.html import strip_tags
 from django.utils.safestring import mark_safe
 from core.forms import PostForm, LikeCommentAdminForm
-from core.models import User, Post, Tag, Comment, LikePost, LikeComment, Role, LikeType, Room, Message, JoinRoom
+from core.models import User, Post, Tag, Comment, LikePost, LikeComment, Role, LikeType, Room, Message, JoinRoom, Alumni
 
 
 class PostAdmin(admin.ModelAdmin):
@@ -126,17 +126,41 @@ class MessageAdmin(admin.ModelAdmin):
     search_fields = ['content']
 
 
+class CustomerUserAdmin(UserAdmin):
+    change_form_template = 'change_form.html'
+
+
 class MySocialMediaAdminSite(admin.AdminSite):
     site_header = 'eSocialMedia'
 
     def get_urls(self):
-        return [path('stats/', self.stats_view)] + super().get_urls()
+        return [path('stats/', self.stats_view),
+                path('register_lecturer/', self.register_lecturer_view),] + super().get_urls()
 
     def stats_view(self, request):
         post_user_stats = User.objects.annotate(c=Count('post__id')).values('id', 'username', 'c')
         return TemplateResponse(request, 'admin/stats.html', {
             'post_user_stats': post_user_stats
         })
+
+    def register_lecturer_view(self, request):
+        return TemplateResponse(request, 'admin/register_lecturer.html')
+
+
+class AlumniAdmin(admin.ModelAdmin):
+    list_display = ('username', 'first_name', 'last_name', 'code', 'email', 'is_active')
+    actions = ['approve_users', 'reject_users']
+
+    def approve_users(self, request, queryset):
+        queryset.update(is_active=True)
+        self.message_user(request, "Selected users have been approved.")
+
+    def reject_users(self, request, queryset):
+        queryset.delete()
+        self.message_user(request, "Selected users have been rejected.")
+
+    approve_users.short_description = "Approve selected users"
+    reject_users.short_description = "Reject selected users"
 
 
 admin_site = MySocialMediaAdminSite(name='iSocialMedia')
@@ -154,4 +178,5 @@ admin_site.register(LikeType, LikeTypeAdmin)
 admin_site.register(Room, RoomAdmin)
 admin_site.register(Message, MessageAdmin)
 admin_site.register(JoinRoom, JoinRoomAdmin)
+admin_site.register(Alumni, AlumniAdmin)
 
