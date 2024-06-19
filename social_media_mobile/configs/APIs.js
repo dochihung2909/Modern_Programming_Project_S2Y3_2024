@@ -32,7 +32,7 @@ export const endpoints = {
     'posts_user_liked_by_id': (id) => `/users/${id}/posts_liked/`,
     'chat_with_target_user': `/users/current-user/add_room/`,
     'all_users': `/users/`,
-    'check_password': '/check_password/',
+    'check_password': '/users/current-user/check_password/',
 }
 
 export const authApi = (token) => {
