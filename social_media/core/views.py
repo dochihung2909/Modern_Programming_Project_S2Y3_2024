@@ -1,5 +1,10 @@
+import os
+
+import requests
 from django.conf import settings
+from django.contrib.auth import authenticate
 from django.contrib.auth.decorators import user_passes_test
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
 from django.shortcuts import render, redirect
 from rest_framework import viewsets, permissions, generics, serializers, status, parsers
@@ -467,10 +472,9 @@ class AlumniRegister(viewsets.ViewSet, generics.CreateAPIView):
         first_name = request.data.get('first_name')
         last_name = request.data.get('last_name')
         email = request.data.get('email')
-        avatar = request.đata.get('avatar')
+        avatar = request.data.get('avatar')
         cover_photo = None
         role = Role.objects.get(pk=1)
-        is_active=False
 
         if User.objects.filter(username=username).exists():
             return Response({'error': 'username already exists'}, status=status.HTTP_400_BAD_REQUEST)
@@ -508,6 +512,155 @@ class AlumniRegister(viewsets.ViewSet, generics.CreateAPIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
+# class LoginViewSet(viewsets.ViewSet):
+#     permission_classes = [permissions.AllowAny]
+# 
+#     def create(self, request):
+#         username = request.data.get('username')
+#         password = request.data.get('password')
+#         role_id = request.data.get('role_id')
+# 
+#         if not username:
+#             return Response({'error': 'username required'}, status=status.HTTP_400_BAD_REQUEST)
+#         if not password:
+#             return Response({'error': 'password required'}, status=status.HTTP_400_BAD_REQUEST)
+#         if not role_id:
+#             return Response({'error': 'role_id required'}, status=status.HTTP_400_BAD_REQUEST)
+# 
+#         try:
+#             user = User.objects.get(username=username)
+#         except User.DoesNotExist:
+#             return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+# 
+#         if not user.check_password(password):
+#             return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+# 
+#         if user.role is None or user.role.id != int(role_id):
+#             return Response({'error': 'Role does not match user'}, status=status.HTTP_400_BAD_REQUEST)
+# 
+#         if int(role_id) == 1:
+#             alumni = Alumni.objects.get(pk=user.id)
+#             serializer = serializers.AlumniSerializer(alumni)
+#         elif int(role_id) == 2:
+#             serializer = serializers.UserSerializer(user)
+#         else:
+#             return Response({'error': 'Invalid role_id'}, status=status.HTTP_400_BAD_REQUEST)
+# 
+#         refresh = RefreshToken.for_user(user)
+#         return Response({
+#             'refresh': str(refresh),
+#             'access': str(refresh.access_token),
+#             'user': serializer.data
+#         }, status=status.HTTP_200_OK)
+#         # token_data = {
+#         #     'username': username,
+#         #     'password': password,
+#         #     'client_id': settings.OAUTH2_CLIENT_ID,
+#         #     'client_secret': settings.OAUTH2_CLIENT_SECRET,
+#         #     'grant_type': 'password',
+#         # }
+#         # response = requests.post(request.build_absolute_uri(settings.OAUTH2_TOKEN_URL), data=token_data)
+#         # if response.status_code != 200:
+#         #     return Response({'error': 'Failed to obtain access token'}, status=response.status_code)
+#         # access_token = response.json().get('access_token')
+#         # return Response({
+#         #     'access_token': access_token,
+#         #     'user': serializer.data
+#         # }, status=status.HTTP_200_OK)
+#     #
+#     #     if role.id == 0 or role.id == 2:
+#     #         serializer = serializers.UserSerializer(user)
+#     #     elif role.id == 1:
+#     #         try:
+#     #             alumni = Alumni.objects.get(user=user)
+#     #         except Alumni.DoesNotExist:
+#     #             return Response({'error': 'Alumni profile not found'}, status=status.HTTP_400_BAD_REQUEST)
+#     #         serializer = serializers.AlumniSerializer(alumni)
+#     #     else:
+#     #         return Response({'error': 'Invalid role_id'}, status=status.HTTP_400_BAD_REQUEST)
+#     #
+#     #     # Prepare data for the token request
+#     #     token_data = {
+#     #         'username': username,
+#     #         'password': password,
+#     #         'client_id': settings.OAUTH2_CLIENT_ID,
+#     #         'client_secret': settings.OAUTH2_CLIENT_SECRET,
+#     #         'grant_type': 'password',
+#     #     }
+#     #
+#     #     # Make a request to the /o/token/ endpoint to get the access token
+#     #     response = requests.post(request.build_absolute_uri(settings.OAUTH2_TOKEN_URL), data=token_data)
+#     #
+#     #     if response.status_code != 200:
+#     #         return Response({'error': 'Failed to obtain access token'}, status=response.status_code)
+#     #
+#     #     # Include the access token in the response
+#     #     access_token = response.json().get('access_token')
+#     #
+#     #     return Response({
+#     #         'access_token': access_token,
+#     #         'user': serializer.data
+#     #     }, status=status.HTTP_200_OK)
+# 
+#     def create(self, request):
+#         username = request.data.get('username')
+#         password = request.data.get('password')
+#         role_id = request.data.get('role_id')
+# 
+#         if not username:
+#             return Response({'error': 'username required'}, status=status.HTTP_400_BAD_REQUEST)
+#         if not password:
+#             return Response({'error': 'password required'}, status=status.HTTP_400_BAD_REQUEST)
+#         if not role_id:
+#             return Response({'error': 'role_id required'}, status=status.HTTP_400_BAD_REQUEST)
+# 
+#         try:
+#             user = User.objects.get(username=username)
+#         except User.DoesNotExist:
+#             return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+# 
+#         if not user.check_password(password):
+#             return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+# 
+#         try:
+#             role = Role.objects.get(id=role_id)
+#         except Role.DoesNotExist:
+#             return Response({'error': 'Invalid role_id'}, status=status.HTTP_400_BAD_REQUEST)
+# 
+#         if role.id == 0 or role.id == 2:
+#             serializer = serializers.UserSerializer(user)
+#         elif role.id == 1:
+#             try:
+#                 alumni = Alumni.objects.get(user=user)
+#                 serializer = serializers.AlumniSerializer(alumni)
+#             except ObjectDoesNotExist:
+#                 return Response({'error': 'Alumni profile not found'}, status=status.HTTP_400_BAD_REQUEST)
+#         else:
+#             return Response({'error': 'Invalid role_id'}, status=status.HTTP_400_BAD_REQUEST)
+# 
+#         # Prepare data for the token request
+#         token_data = {
+#             'username': username,
+#             'password': password,
+#             'client_id': settings.OAUTH2_CLIENT_ID,
+#             'client_secret': settings.OAUTH2_CLIENT_SECRET,
+#             'grant_type': 'password',
+#         }
+# 
+#         # Make a request to the /o/token/ endpoint to get the access token
+#         response = requests.post(request.build_absolute_uri(settings.OAUTH2_TOKEN_URL), data=token_data)
+# 
+#         if response.status_code != 200:
+#             return Response({'error': 'Failed to obtain access token'}, status=response.status_code)
+# 
+#         # Include the access token in the response
+#         access_token = response.json().get('access_token')
+# 
+#         return Response({
+#             'access_token': access_token,
+#             'user': serializer.data
+#         }, status=status.HTTP_200_OK)
+    
 class LoginViewSet(viewsets.ViewSet):
     permission_classes = [permissions.AllowAny]
 
@@ -531,23 +684,30 @@ class LoginViewSet(viewsets.ViewSet):
         if not user.check_password(password):
             return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if user.role is None or user.role.id != int(role_id):
-            return Response({'error': 'Role does not match user'}, status=status.HTTP_400_BAD_REQUEST)
-
-        if int(role_id) == 1:
-            alumni = Alumni.objects.get(pk=user.id)
-            serializer = serializers.AlumniSerializer(alumni)
-        elif int(role_id) == 2:
-            serializer = serializers.UserSerializer(user)
+        if (int(role_id) == 1 and user.role.id == 1) or (int(role_id) == 2 and user.role.id == 2) or (int(role_id) == 0 and user.role.id == 0):
+            return Response(serializers.UserSerializer(user).data, status=status.HTTP_200_OK)
         else:
-            return Response({'error': 'Invalid role_id'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Can not log in'}, status=status.HTTP_400_BAD_REQUEST)
 
-        refresh = RefreshToken.for_user(user)
-        return Response({
-            'refresh': str(refresh),
-            'access': str(refresh.access_token),
-            'user': serializer.data
-        }, status=status.HTTP_200_OK)
+
+
+
+
+
+        # if int(role_id) == 1 or int(role_id) == 0:
+        #     alumni = Alumni.objects.get(pk=user.id)
+        #     serializer = serializers.AlumniSerializer(alumni)
+        # elif int(role_id) == 2:
+        #     serializer = serializers.UserSerializer(user)
+        # else:
+        #     return Response({'error': 'Invalid role_id'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # refresh = RefreshToken.for_user(user)
+        # return Response({
+        #     'refresh': str(refresh),
+        #     'access': str(refresh.access_token),
+        #     'user': serializer.data
+        # }, status=status.HTTP_200_OK)
 
 
 @user_passes_test(lambda u: u.is_superuser)
@@ -569,5 +729,7 @@ def reject_user(request, user_id):
     user = Alumni.objects.get(id=user_id)
     user.delete()
     return redirect('pending_alumnis')
+
+
 
 
