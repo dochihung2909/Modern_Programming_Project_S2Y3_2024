@@ -1,0 +1,88 @@
+<!--<!DOCTYPE html>-->
+<!--<html lang="en">-->
+<!--<head>-->
+<!--    <meta charset="UTF-8">-->
+<!--    <title>Pending Alumnis</title>-->
+<!--</head>-->
+<!--<body>-->
+<!--    <h1>Pending Alumnis</h1>-->
+<!--    <table>-->
+<!--        <tr>-->
+<!--            <th>Username</th>-->
+<!--            <th>First Name</th>-->
+<!--            <th>Last Name</th>-->
+<!--            <th>Code</th>-->
+<!--            <th>Email</th>-->
+<!--            <th>Actions</th>-->
+<!--        </tr>-->
+<!--        {% for user in pending_users %}-->
+<!--        <tr>-->
+<!--            <td>{{ user.username }}</td>-->
+<!--            <td>{{ user.first_name }}</td>-->
+<!--            <td>{{ user.last_name }}</td>-->
+<!--            <td>{{ user.code }}</td>-->
+<!--            <td>{{ user.email }}</td>-->
+<!--            <td>-->
+<!--                <form method="post" action="{% url 'approve_user' user.id %}">-->
+<!--                    {% csrf_token %}-->
+<!--                    <button type="submit">Duyệt</button>-->
+<!--                </form>-->
+<!--                <form method="post" action="{% url 'reject_user' user.id %}">-->
+<!--                    {% csrf_token %}-->
+<!--                    <button type="submit">Từ chối</button>-->
+<!--                </form>-->
+<!--            </td>-->
+<!--        </tr>-->
+<!--        {% endfor %}-->
+<!--    </table>-->
+<!--</body>-->
+<!--</html>-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Pending Alumnis</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto py-8">
+        <h1 class="text-3xl font-bold text-center mb-8">Pending Alumnis</h1>
+        <div class="bg-white shadow-md rounded-lg overflow-hidden">
+            <table class="min-w-full bg-white">
+                <thead>
+                    <tr>
+                        <th class="py-2 px-4 border-b border-gray-200 bg-gray-100 text-left text-sm font-semibold text-gray-600">Username</th>
+                        <th class="py-2 px-4 border-b border-gray-200 bg-gray-100 text-left text-sm font-semibold text-gray-600">First Name</th>
+                        <th class="py-2 px-4 border-b border-gray-200 bg-gray-100 text-left text-sm font-semibold text-gray-600">Last Name</th>
+                        <th class="py-2 px-4 border-b border-gray-200 bg-gray-100 text-left text-sm font-semibold text-gray-600">Email</th>
+                        <th class="py-2 px-4 border-b border-gray-200 bg-gray-100 text-left text-sm font-semibold text-gray-600">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in pending_users %}
+                    <tr>
+                        <td class="py-2 px-4 border-b border-gray-200">{{ user.username }}</td>
+                        <td class="py-2 px-4 border-b border-gray-200">{{ user.first_name }}</td>
+                        <td class="py-2 px-4 border-b border-gray-200">{{ user.last_name }}</td>
+                        <td class="py-2 px-4 border-b border-gray-200">{{ user.email }}</td>
+                        <td class="py-2 px-4 border-b border-gray-200">
+                            <div class="flex space-x-4">
+                                <form method="post" action="{% url 'approve_user' user.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-700">Duyệt</button>
+                                </form>
+                                <form method="post" action="{% url 'reject_user' user.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700">Từ chối</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
+

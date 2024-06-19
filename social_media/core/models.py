@@ -22,6 +22,7 @@ class Role(BaseModel):
 
 
 class User(AbstractUser):
+    cover_photo = CloudinaryField(null=True)
     avatar = CloudinaryField(null=False)
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True)
 

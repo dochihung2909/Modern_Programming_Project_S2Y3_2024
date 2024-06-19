@@ -1,3 +1,7 @@
+from django.conf import settings
+from django.contrib.auth.decorators import user_passes_test
+from django.core.mail import send_mail
+from django.shortcuts import render, redirect
 from rest_framework import viewsets, permissions, generics, serializers, status, parsers
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
@@ -36,6 +40,7 @@ class PostViewSet(viewsets.ViewSet,
             return [perms.OwnerAuthenticated()]
 
         return [permission() for permission in self.permission_classes]
+
 
     def get_serializer_class(self):
         if self.request.user.is_authenticated:
@@ -151,8 +156,8 @@ class UserViewSet(viewsets.ViewSet,
 
     def get_serializer_class(self):
         if self.request.user.is_superuser:
-            return serializers.UserSerializer
-        return serializers.UserCustomSerializer
+            return serializers.UserDetailSerializer
+        return serializers.UserSerializer
 
     def get_queryset(self):
         if self.request.user.is_superuser:
@@ -177,7 +182,7 @@ class UserViewSet(viewsets.ViewSet,
                 setattr(user, k, v)
             user.save()
 
-        return Response(serializers.UserSerializer(user).data)
+        return Response(serializers.UserDetailSerializer(user).data)
 
     @action(methods=['get'], url_path='current-user/rooms', detail=False)
     def get_rooms(self, request):
@@ -414,7 +419,7 @@ class LecturerRegister(viewsets.ViewSet, generics.CreateAPIView):
         first_name = request.data.get('first_name')
         last_name = request.data.get('last_name')
         email = request.data.get('email')
-        avatar = request.data.get('avatar')
+        avatar = request.FILES.get('avatar')
         role = Role.objects.get(pk=2)
 
         if User.objects.filter(username=username).exists():
@@ -439,11 +444,11 @@ class LecturerRegister(viewsets.ViewSet, generics.CreateAPIView):
 
 
 class AlumniRegister(viewsets.ViewSet, generics.CreateAPIView):
-    permission_classes = [perms.IsSuperUser]
+    permission_classes = [permissions.AllowAny]
     serializer_class = serializers.AlumniSerializer
 
     def create(self, request):
-        required_fields = ['username', 'password', 'first_name', 'last_name', 'email', 'code', 'avatar']
+        required_fields = ['username', 'first_name', 'last_name', 'email', 'avatar']
         missing_fields = [field for field in required_fields if not request.data.get(field)]
 
         if missing_fields:
@@ -451,44 +456,37 @@ class AlumniRegister(viewsets.ViewSet, generics.CreateAPIView):
                             status=status.HTTP_400_BAD_REQUEST)
 
         username = request.data.get('username')
-        password = request.data.get('password')
-        code = request.data.get('code')
+        password = 'ou@123'
         first_name = request.data.get('first_name')
         last_name = request.data.get('last_name')
         email = request.data.get('email')
-        avatar = request.data.get('avatar')
-        role = Role.objects.get(pk=1)
+        avatar = request.FILES.get('avatar')
+        print(avatar)
+        role = Role.objects.get(pk=2)
 
         if User.objects.filter(username=username).exists():
             return Response({'error': 'username already exists'}, status=status.HTTP_400_BAD_REQUEST)
-        if Alumni.objects.filter(code=code).exists():
-            return Response({'error': 'code already exists'}, status=status.HTTP_400_BAD_REQUEST)
-        if User.objects.filter(email=email).exists():
-            return Response({'error': 'email already exists'}, status=status.HTTP_400_BAD_REQUEST)
+        # if User.objects.filter(email=email).exists():
+        #     return Response({'error': 'email already exists'}, status=status.HTTP_400_BAD_REQUEST)
         if first_name == last_name:
             return Response({'error': 'first name and last name must be different'})
-        if len(password) < 8:
-            return Response({'error': 'Password must be at least 8 characters long.'})
-        if sum(c.isdigit() for c in password) < 1:
-            return Response({'error': 'Password must contain at least 1 number.'})
-        if not any(c.isupper() for c in password):
-            return Response({'error': 'Password must contain at least 1 uppercase letter.'})
-        if not any(c.islower() for c in password):
-            return Response({'error': 'Password must contain at least 1 lowercase letter.'})
-        if (password and username) and (username in password):
-            raise serializers.ValidationError("Password cannot contain the username.")
 
-        alumni = Alumni.objects.create_user(
+        subject = 'Welcome to Social Meida App by HungTS and ngHung'
+        message = f'Chào mứng {first_name} {last_name} có {email} đến đây mật khẩu của bạn là @ou123. Hãy đổi mật khẩu trong vòng 30 ngày'
+        from_email = settings.EMAIL_HOST_USER
+        recipient_list = [email]
+        send_mail(subject, message, from_email, recipient_list, fail_silently=False)
+
+        user = User.objects.create_user(
             username=username,
             password=password,
-            code=code,
             first_name=first_name,
             last_name=last_name,
             email=email,
             avatar=avatar,
             role=role
         )
-        serializer = serializers.AlumniSerializer(alumni)
+        serializer = serializers.UserSerializer(user)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -533,3 +531,26 @@ class LoginViewSet(viewsets.ViewSet):
             'access': str(refresh.access_token),
             'user': serializer.data
         }, status=status.HTTP_200_OK)
+
+
+@user_passes_test(lambda u: u.is_superuser)
+def pending_alumnis(request):
+    pending_users = Alumni.objects.filter(is_active=False)
+    return render(request, 'admin/pending_alumnis.html', {'pending_users': pending_users})
+
+
+@user_passes_test(lambda u: u.is_superuser)
+def approve_user(request, user_id):
+    user = Alumni.objects.get(id=user_id)
+    user.is_active = True
+    user.save()
+    return redirect('pending_alumnis')
+
+
+@user_passes_test(lambda u: u.is_superuser)
+def reject_user(request, user_id):
+    user = Alumni.objects.get(id=user_id)
+    user.delete()
+    return redirect('pending_alumnis')
+
+
