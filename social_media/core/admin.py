@@ -14,7 +14,7 @@ from core.models import User, Post, Tag, Comment, LikePost, LikeComment, Role, L
 
 
 class PostAdmin(admin.ModelAdmin):
-    list_display = ['id', 'created_date', 'short_content', 'user_id']
+    list_display = ['id', 'created_date', 'short_content', 'user_id', 'block_comment']
     list_filter = ['user_id']
     search_fields = ['content']
     readonly_fields = ['img']

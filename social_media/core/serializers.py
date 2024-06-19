@@ -50,7 +50,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UserDetailSerializer(UserSerializer):
-    # cover_photo = serializers.ModelSerializer(source='user.cover_phto', read_only=True)
+    # cover_photo = serializers.ModelSerializer(source='user.cover_photo', read_only=True)
     class Meta:
         model = UserSerializer.Meta.model
         # fields = UserSerializer.Meta.fields + ['cover_photo']
@@ -97,11 +97,12 @@ class PostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Post
-        fields = ['id', 'content', 'image', 'user', 'created_date']
+        fields = ['id', 'content', 'image', 'user', 'created_date', 'block_comment']
 
 
 class PostDetailsSerializer(PostSerializer):
     tags = TagSerializer(many=True)
+
 
     class Meta:
         model = PostSerializer.Meta.model
