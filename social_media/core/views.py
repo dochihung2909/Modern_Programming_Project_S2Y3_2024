@@ -151,7 +151,7 @@ class UserViewSet(viewsets.ViewSet,
                   generics.CreateAPIView,
                   generics.RetrieveAPIView):
     queryset = User.objects.filter(is_active=True)
-    serializer_class = serializers.UserSerializer
+    serializer_class = serializers.UserDetailSerializer
     parser_classes = [MultiPartParser, ]
 
     def get_permissions(self):
@@ -160,9 +160,7 @@ class UserViewSet(viewsets.ViewSet,
         return [permissions.AllowAny()]
 
     def get_serializer_class(self):
-        if self.request.user.is_superuser:
-            return serializers.UserDetailSerializer
-        return serializers.UserSerializer
+        return serializers.UserDetailSerializer
 
     def get_queryset(self):
         if self.request.user.is_superuser:
@@ -175,7 +173,7 @@ class UserViewSet(viewsets.ViewSet,
         if request.user.is_superuser:
             serializer = self.get_serializer(queryset, many=True)
         else:
-            serializer = serializers.UserCustomSerializer(queryset, many=True)
+            serializer = serializers.UserDetailSerializer(queryset, many=True)
 
         return Response(serializer.data)
 
@@ -183,9 +181,11 @@ class UserViewSet(viewsets.ViewSet,
     def get_current_user(self, request):
         user = request.user
         if request.method.__eq__('PATCH'):
-            for k, v in request.data.items():
-                setattr(user, k, v)
-            user.save()
+            if request.data.get('password'):
+                new_password = request.data.get('password')
+                if user.check_password(new_password):
+                    user.set_password(new_password)
+                    user.save()
 
         return Response(serializers.UserDetailSerializer(user).data)
 
@@ -434,8 +434,12 @@ class LecturerRegister(viewsets.ViewSet, generics.CreateAPIView):
         if first_name == last_name:
             return Response({'error': 'first name and last name must be different'})
 
-        subject = 'Welcome to Social Meida App by HungTS and ngHung'
-        message = f'Chào mứng {first_name} {last_name} có {email} đến đây mật khẩu của bạn là @ou123. Hãy đổi mật khẩu trong vòng 30 ngày'
+        subject = 'Chào mừng tới Mạng Xã Hội Cựu Sinh Viên by HungTS and ngHung'
+        message = (f'Chào mứng {first_name} {last_name} có {email} đến với Mạng Xã Hội Cựu Sinh Viên'
+                   f'mật khẩu của bạn là @ou123.'
+                   f'Hãy đổi mật khẩu trong vòng 24 giờ.'
+                   f'Nếu sau khoảng thời gian này bạn cần liên hệ với admin thông qua email này.'
+                   f'Cảm ơn.')
         from_email = settings.EMAIL_HOST_USER
         recipient_list = [email]
         send_mail(subject, message, from_email, recipient_list, fail_silently=False)
@@ -472,7 +476,7 @@ class AlumniRegister(viewsets.ViewSet, generics.CreateAPIView):
         first_name = request.data.get('first_name')
         last_name = request.data.get('last_name')
         email = request.data.get('email')
-        avatar = request.data.get('avatar')
+        avatar = request.FILES.get('avatar')
         cover_photo = None
         role = Role.objects.get(pk=1)
 
@@ -690,26 +694,6 @@ class LoginViewSet(viewsets.ViewSet):
             return Response({'error': 'Can not log in'}, status=status.HTTP_400_BAD_REQUEST)
 
 
-
-
-
-
-        # if int(role_id) == 1 or int(role_id) == 0:
-        #     alumni = Alumni.objects.get(pk=user.id)
-        #     serializer = serializers.AlumniSerializer(alumni)
-        # elif int(role_id) == 2:
-        #     serializer = serializers.UserSerializer(user)
-        # else:
-        #     return Response({'error': 'Invalid role_id'}, status=status.HTTP_400_BAD_REQUEST)
-
-        # refresh = RefreshToken.for_user(user)
-        # return Response({
-        #     'refresh': str(refresh),
-        #     'access': str(refresh.access_token),
-        #     'user': serializer.data
-        # }, status=status.HTTP_200_OK)
-
-
 @user_passes_test(lambda u: u.is_superuser)
 def pending_alumnis(request):
     pending_users = Alumni.objects.filter(is_active=False)
@@ -719,6 +703,14 @@ def pending_alumnis(request):
 @user_passes_test(lambda u: u.is_superuser)
 def approve_user(request, user_id):
     user = Alumni.objects.get(id=user_id)
+    subject = 'Chấp nhận yêu cầu tham gia Mạng Xã Hội Cựu Sinh Viên by HungTS and ngHung'
+    message = (
+        f'Chào mứng {user.first_name} {user.last_name} có {user.email} và Mã số sinh viên {user.code} đến với Mạng Xã Hội Cựu Sinh Viên'
+        f'Bạn đã được chấp nhận để truy cập vào hệ thống với username và password bạn đã tạo.'
+        f'Cảm ơn.')
+    from_email = settings.EMAIL_HOST_USER
+    recipient_list = [user.email]
+    send_mail(subject, message, from_email, recipient_list, fail_silently=False)
     user.is_active = True
     user.save()
     return redirect('pending_alumnis')

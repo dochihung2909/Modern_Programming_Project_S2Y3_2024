@@ -217,7 +217,7 @@ class MessageSerializer(serializers.ModelSerializer):
 
 
 class JoinRoomSerializer(serializers.ModelSerializer):
-    user = UserCustomSerializer()
+    user = UserDetailSerializer()
     room = RoomSerializer()
 
     class Meta:

@@ -49,6 +49,7 @@ class Post(BaseModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     image = CloudinaryField(null=False)
     tags = models.ManyToManyField(Tag, blank=True)
+    block_comment = models.BooleanField(default=False)
 
     def __str__(self):
         return f'{self.id} - {self.content[:50]}'
@@ -133,3 +134,37 @@ class JoinRoom(BaseModel):
 
     class Meta:
         unique_together = ('user', 'room')
+
+
+class Survey(BaseModel):
+    title = models.CharField(max_length=50)
+    description = models.TextField()
+
+    def __str__(self):
+        return self.title
+
+
+class Question(BaseModel):
+    text = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.text[:50]
+
+
+class UserResponse(BaseModel):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    survey = models.ForeignKey(Survey, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f'{self.user.username} - {self.survey.title}'
+
+
+class Answer(BaseModel):
+    CHOICES = [
+        (0, 'Agree'),
+        (1, 'Neutral'),
+        (2, 'Disagree')
+    ]
+    user_response = models.ForeignKey(UserResponse, on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    choice = models.IntegerField(choices=CHOICES)
