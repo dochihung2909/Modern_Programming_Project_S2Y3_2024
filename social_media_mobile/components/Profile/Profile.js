@@ -16,6 +16,7 @@ import Setting from './Setting';
 export default function Profile({route, navigation}) {  
  
   const { user, logout, update } = useAuth(); 
+  console.log(user)
   // console.log(user)
   let userId = user.id
 
@@ -53,6 +54,8 @@ export default function Profile({route, navigation}) {
     console.log(likedRes.data) 
     setLikedList(likedRes.data)
   }
+
+  const role_types = ['Quản trị viên', 'Cựu sinh viên', 'Giảng viên']
 
   
   const checkLiked = (postId) => {
@@ -116,6 +119,7 @@ export default function Profile({route, navigation}) {
   const onRefresh = useCallback(() => {
     setRefreshing(true); 
     loadPosts()
+    loadUserInfo()
     setTimeout(() => {
       setRefreshing(false);  
     }, 2000);
@@ -124,7 +128,7 @@ export default function Profile({route, navigation}) {
   // Custom header title
   useLayoutEffect(() => {
       navigation.setOptions({
-          title: userInfo.username,
+          title: `${userInfo.first_name} ${userInfo.last_name}`,
       });
   }, [navigation, userInfo]);
   
@@ -229,7 +233,7 @@ export default function Profile({route, navigation}) {
               className="w-20 h-20 rounded-full border-4 border-white"
             />
             <Text className="mt-4 text-xl font-bold">{`${userInfo?.first_name} ${userInfo?.last_name}`}</Text>
-            <Text className="mt-2 text-sm font-semibold">{`${userInfo?.username}`}</Text> 
+            <Text className="mt-2 text-sm font-semibold">{role_types[userInfo.role]}</Text> 
           </View>
 
           

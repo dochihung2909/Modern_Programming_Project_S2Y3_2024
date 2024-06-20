@@ -29,6 +29,7 @@ import Setting from './components/Profile/Setting';
 import EditCoverPhoto from './components/Profile/EditCoverPhoto';
 import Group from './components/Group/Group';
 import CreateGroupChat from './components/Group/CreateGroupChat';
+import DetailGroup from './components/Group/DetailGroup';
 
 const Stack = createNativeStackNavigator();
 
@@ -48,7 +49,9 @@ const MyTab = () => {
         <>
           <Tab.Screen name="Home" component={Home} options={{ title: "Trang chủ", tabBarIcon: () => <Icon size={30} color="black" source="home-outline" />}} /> 
           <Tab.Screen name="Notification" component={Notification} options={{tabBarIcon: () => <Icon size={30} color="black" source="bell-outline" />}} /> 
-          <Tab.Screen name="Group" component={Group} options={{tabBarIcon: () => <Icon size={30} color="black" source="account-group-outline" />}} /> 
+          {user.role == 0 && 
+            <Tab.Screen name="Group" component={Group} options={{tabBarIcon: () => <Icon size={30} color="black" source="account-group-outline" />}} /> 
+          }
           <Tab.Screen name="Profile" component={Profile} options={{title: "Hồ sơ", tabBarIcon: () => <Icon size={30} color="black" source="account-outline" />}} />
           <Tab.Screen name="Chat" component={Chat} options={{tabBarIcon: () => <Icon size={30} color="black" source="chat-outline" />}} />   
         </> 
@@ -88,6 +91,7 @@ const MyStack = () => {
         <Stack.Screen name='Setting' component={Setting} options={{title: 'Cài đặt', headerTitleAlign: 'center'}}/>   
         <Stack.Screen name='EditCoverPhoto' component={EditCoverPhoto} options={{title: 'Đổi ảnh bìa', headerTitleAlign: 'center'}}/>   
         <Stack.Screen name='CreateGroupChat' component={CreateGroupChat} options={{title: 'Tạo nhóm', headerTitleAlign: 'center'}}/>   
+        <Stack.Screen name='DetailGroup' component={DetailGroup} options={{title: 'Nhóm', headerTitleAlign: 'center'}}/>   
       </>
     }
       
