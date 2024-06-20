@@ -242,7 +242,8 @@ class JoinGroupSerializer(serializers.ModelSerializer):
 
 class NotificationSerializer(serializers.ModelSerializer):
     group = GroupSerializer()
+    user = UserSerializer()
 
     class Meta:
         model = Notification
-        fields = ['id', 'title', 'content', 'group', 'created_date']
+        fields = ['id', 'title', 'content', 'group', 'user', 'created_date']
