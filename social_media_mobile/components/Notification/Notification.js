@@ -1,10 +1,14 @@
 import { View, Text } from 'react-native'
-import React from 'react'
+import React, { useEffect } from 'react'
+import { WebView } from 'react-native-webview';
+import APIs from '../../configs/APIs';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function Notification() {
+ 
+
+
   return (
-    <View>
-      <Text>Notification</Text>
-    </View>
+    <WebView source={{ uri: 'https://hungts.pythonanywhere.com/admin/notification/' }} style={{ flex: 1 }} /> 
   )
 }

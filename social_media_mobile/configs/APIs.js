@@ -33,7 +33,7 @@ export const endpoints = {
     'chat_with_target_user': `/users/current-user/add_room/`,
     'all_users': `/users/`,
     'change_password': '/users/current-user/change_password/',
-    'create_group': '/group/add_group/',
+    'create_group': '/group/create_group/',
     'get_groups': '/group/'
 }
 
