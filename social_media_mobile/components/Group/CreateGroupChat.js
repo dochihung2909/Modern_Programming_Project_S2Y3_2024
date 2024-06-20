@@ -7,6 +7,7 @@ import { formatUrl } from '../../dao';
 import { useAuth } from '../../configs/Contexts';
 import Separate from '../Separate/Separate';
 import SuccessModal from '../Modal/SuccessModal';
+import LoadingScreen from '../LoadingScreen'
 
 const CreateGroupChat = ({navigation}) => {
     const {user} = useAuth()
@@ -18,15 +19,26 @@ const CreateGroupChat = ({navigation}) => {
       errMessage: ''
     });
     const [isModalVisible, setIsModalVisible] = useState(false)
+    const [loading, setLoading] = useState(false)
 
     const handleLoadAllUser = async () => {
+        setLoading(true)
         const access_token = await AsyncStorage.getItem('token')
-        const res = await authApi(access_token).get(endpoints['all_users'])
-        console.log(res.data)
-        if (res.status == 200) {
-            let users = res.data.filter(us => us.id !== user.id) 
-            setUsers(users)
+        try {
+          const res = await authApi(access_token).get(endpoints['all_users'])
+          console.log(res.data)
+          if (res.status == 200) {
+              let users = res.data.filter(us => us.id !== user.id) 
+              setUsers(users)
+          } 
+        } catch (err) {
+          console.error(err)
+          setLoading(false)
+          navigation.goBack()
+        } finally {
+          setLoading(false)
         }
+        
     }
 
     useEffect(() => {
@@ -47,18 +59,31 @@ const CreateGroupChat = ({navigation}) => {
 
     const handleSubmit = async () => {  
       const access_token = await AsyncStorage.getItem('token')
-      let form = new FormData()
-      form.append('name', groupName)
-      form.append('list_user_id', selectedUsers)
-      const res = await authApi(access_token).post(endpoints['create_group'], form, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
+      setLoading(true)
+      try { 
+        let form = new FormData()
+        form.append('name', groupName)
+        form.append('list_user_id', selectedUsers)
+        console.log(groupName, selectedUsers)
+        console.log(form)
+        const res = await authApi(access_token).post(endpoints['create_group'], JSON.stringify({
+          "name": groupName,
+          "list_user_id": selectedUsers
+        }), {
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        })
+        console.log(res.data)
+        if (res.status == 200) {
+          console.log('Create success')
+          setLoading(false) 
+          navigation.navigate('DetailGroup', {group: res.data})
         }
-      })
-      console.log(res.data)
-      if (res.status == 201) {
-        console.log('Create success')
-        navigation.goBack()
+      } catch(err) {
+        console.log(err, err.response.data)
+        setLoading(false)
+        setIsModalVisible(false)    
       }
     };
 
@@ -84,6 +109,12 @@ const CreateGroupChat = ({navigation}) => {
       }
       
     }
+
+  if (loading) {
+    return (
+      <LoadingScreen></LoadingScreen>
+    )
+  }
 
   return (
     <View className={'bg-white'}>

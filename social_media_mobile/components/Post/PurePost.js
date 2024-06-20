@@ -10,7 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { MyUserContext, useAuth } from '../../configs/Contexts';
 import RenderHtml from 'react-native-render-html';
-import {calculateNewImageHeight, resizeImage} from '../../dao/index'
+import {calculateNewImageHeight, formatDate, resizeImage} from '../../dao/index'
 import AlertModal from '../Modal/AlertModal';
 
 const PurePost = ({isDetail, isCurrentLiked, loadPosts, post, alwaysShowComment = false, navigation}) => { 
@@ -19,6 +19,8 @@ const PurePost = ({isDetail, isCurrentLiked, loadPosts, post, alwaysShowComment 
     const [containerWidth, setContainerWidth] = useState(0); 
     const [imageHeight, setImageHeight] = useState(0);
     const [isModalVisible, setIsModalVisible] = useState(false); 
+    const [countLike, setCountLike] = useState(0); 
+    const [countCmt, setCountCmt] = useState(0);
     const [isDelete, setIsDelete] = useState(false); 
     const { user } = useAuth()
     
@@ -48,7 +50,7 @@ const PurePost = ({isDetail, isCurrentLiked, loadPosts, post, alwaysShowComment 
                 "Content-Type": 'multipart/form-data'
             }
         })
-        console.log(res.data)
+        // console.log(res.data)
         if (res.status == 200) {
             console.log('Delete success')   
             loadPosts()
@@ -66,9 +68,25 @@ const PurePost = ({isDetail, isCurrentLiked, loadPosts, post, alwaysShowComment 
         }
     };   
      
+    const handleLoadLikeComment = async () => {
+        const access_token = await AsyncStorage.getItem('token')
+        const likeRes = await authApi(access_token).get(endpoints['get_post_likes'](post.id)) 
+        console.log(likeRes.data)
+        if (likeRes.data) {
+            setCountLike(likeRes.data.users.length)
+        }
+        const commentRes = await authApi(access_token).get(endpoints['get_post_comments'](post.id)) 
+        if (commentRes.data) {
+            setCountCmt(commentRes.data.length)
+        }
+    }
+
+    useEffect(() => {
+        handleLoadLikeComment()
+    }, [])
     
     const handleBlockComment = async (post) => {
-        console.log(post.block_comment)
+        // console.log(post.block_comment)
         const access_token = await AsyncStorage.getItem('token')
         if (!post.block_comment) {
             let form = new FormData() 
@@ -79,7 +97,7 @@ const PurePost = ({isDetail, isCurrentLiked, loadPosts, post, alwaysShowComment 
                     "Content-Type": 'multipart/form-data'
                 }
             })
-            console.log(res.data)
+            // console.log(res.data)
             if (res.status == 200) {
                 console.log('Blocked success')   
                 loadPosts()
@@ -93,7 +111,7 @@ const PurePost = ({isDetail, isCurrentLiked, loadPosts, post, alwaysShowComment 
                     "Content-Type": 'multipart/form-data'
                 }
             })
-            console.log(res.data)
+            // console.log(res.data)
             if (res.status == 200) {
                 console.log('Blocked success')   
                 loadPosts()
@@ -114,13 +132,21 @@ const PurePost = ({isDetail, isCurrentLiked, loadPosts, post, alwaysShowComment 
             navigation.navigate('Profile')
         } 
     } 
+
+    
+  const role_types = ['Quản trị viên', 'Cựu sinh viên', 'Giảng viên']
 return (
     <>
         <View className={('bg-white p-4 rounded-lg shadow')}>
             <View onLayout={onContainerLayout}  className={'flex-row justify-between'}> 
                 <TouchableOpacity  className={('flex-row items-center mb-4')} onPress={() => handleNavigateUser(post?.user.id)}>
                     <Image source={{ uri: post.user?.avatar }} className={('w-10 h-10 rounded-full mr-4')} />
-                    <Text className={('font-bold text-lg')}>{`${post?.user.first_name} ${post.user.last_name}`}</Text> 
+                    <View>
+                        <Text className={('font-bold text-lg')}>{`${post?.user.first_name} ${post.user.last_name}`}</Text>  
+                        <Text className={('text-sm')}>{`${role_types[post?.user.role]}`}</Text> 
+                        <Text className={'text-sm text-slate-500 mt-1'}>{formatDate(post.created_date)}</Text> 
+                    </View> 
+                    
                 </TouchableOpacity>
                 {post?.user.id == user.id &&
                     <DropdownMenu
@@ -157,6 +183,10 @@ return (
                     }
                 }/>
             )}
+            <View className={'flex-row justify-between items-center my-2'}> 
+                <Text className={'text-base'}>{countLike > 0 && countLike + ' Lượt thích'}</Text> 
+                <Text className={'text-base'}>{countCmt > 0 && countCmt + ' Bình luận'} </Text>
+            </View>
             <View className={('flex-row justify-around border-t border-gray-200 pt-2')}>
                 <View className={('flex-row flex-1 justify-center items-center')}>    
                 <LikeButton isCurrentLiked={isCurrentLiked} postId={post.id} endpoint={endpoints['like_post'](post?.id)} imageStyle={styles.image} textStyle={styles.text} icon={true}></LikeButton>

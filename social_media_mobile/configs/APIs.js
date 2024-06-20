@@ -34,7 +34,11 @@ export const endpoints = {
     'all_users': `/users/`,
     'change_password': '/users/current-user/change_password/',
     'create_group': '/group/create_group/',
-    'get_groups': '/group/'
+    'get_groups': '/group/',
+    'get_notifications': '/users/current-user/notifications/',
+    'create_group_chat': (id) => `/group/${id}/create_chat_room/`,
+    'get_post_likes': (id) => `/posts/${id}/likes/`,
+    'get_post_comments': (id) => `/posts/${id}/comments/`
 }
 
 export const authApi = (token) => {

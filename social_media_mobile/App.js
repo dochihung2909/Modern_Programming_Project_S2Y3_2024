@@ -30,6 +30,8 @@ import EditCoverPhoto from './components/Profile/EditCoverPhoto';
 import Group from './components/Group/Group';
 import CreateGroupChat from './components/Group/CreateGroupChat';
 import DetailGroup from './components/Group/DetailGroup';
+import PostNotification from './components/Notification/PostNotification';
+import DetailNotification from './components/Notification/DetailNotification';
 
 const Stack = createNativeStackNavigator();
 
@@ -48,9 +50,9 @@ const MyTab = () => {
       {user && 
         <>
           <Tab.Screen name="Home" component={Home} options={{ title: "Trang chủ", tabBarIcon: () => <Icon size={30} color="black" source="home-outline" />}} /> 
-          <Tab.Screen name="Notification" component={Notification} options={{tabBarIcon: () => <Icon size={30} color="black" source="bell-outline" />}} /> 
+          <Tab.Screen name="Notification" component={Notification} options={{title: "Thông báo",tabBarIcon: () => <Icon size={30} color="black" source="bell-outline" />}} /> 
           {user.role == 0 && 
-            <Tab.Screen name="Group" component={Group} options={{tabBarIcon: () => <Icon size={30} color="black" source="account-group-outline" />}} /> 
+            <Tab.Screen name="Group" component={Group} options={{title: "Nhóm",tabBarIcon: () => <Icon size={30} color="black" source="account-group-outline" />}} /> 
           }
           <Tab.Screen name="Profile" component={Profile} options={{title: "Hồ sơ", tabBarIcon: () => <Icon size={30} color="black" source="account-outline" />}} />
           <Tab.Screen name="Chat" component={Chat} options={{tabBarIcon: () => <Icon size={30} color="black" source="chat-outline" />}} />   
@@ -92,6 +94,8 @@ const MyStack = () => {
         <Stack.Screen name='EditCoverPhoto' component={EditCoverPhoto} options={{title: 'Đổi ảnh bìa', headerTitleAlign: 'center'}}/>   
         <Stack.Screen name='CreateGroupChat' component={CreateGroupChat} options={{title: 'Tạo nhóm', headerTitleAlign: 'center'}}/>   
         <Stack.Screen name='DetailGroup' component={DetailGroup} options={{title: 'Nhóm', headerTitleAlign: 'center'}}/>   
+        <Stack.Screen name='PostNotification' component={PostNotification} options={{title: 'Tạo thông báo', headerTitleAlign: 'center'}}/>   
+        <Stack.Screen name='DetailNotification' component={DetailNotification} options={{title: 'Chi tiết thông báo', headerTitleAlign: 'center'}}/>   
       </>
     }
       
@@ -111,23 +115,24 @@ export default function App() {
           let user = await authApi(savedToken).get(endpoints['current_user']);
           console.info(user.data); 
           dispatch({ type: 'login', payload: user.data });
+          setIsLoading(false)    
         } else {
           dispatch({ type: 'logout' });
           console.log('logged out');
+          setIsLoading(false)    
           await AsyncStorage.removeItem('token');
         }
       } catch (error) {
         console.error('Failed to check token', error);
-      } finally {
         setIsLoading(false);
-      }
+      }  
     };
 
     checkToken();
   }, []);
 
   if (isLoading) {
-    return <LoadingScreen />; // Hoặc bất kỳ màn hình loading nào bạn muốn hiển thị
+    return <LoadingScreen />;
   }
 
   return (

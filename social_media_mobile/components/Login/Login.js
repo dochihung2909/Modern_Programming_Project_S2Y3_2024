@@ -20,6 +20,8 @@ const Login = () => {
     const nav = useNavigation();
     const { login } = useAuth();
 
+    const [showPass, setShowPass] = useState(false)
+
     const client_id = process.env.CLIENT_ID 
     const client_secret = process.env.CLIENT_SECRET 
     
@@ -192,8 +194,8 @@ const Login = () => {
                         onChangeText={t => updateSate(c.name, t)}
                         key={c.name} 
                         label={c.label} 
-                        secureTextEntry={c.secureTextEntry}
-                        right={<TextInput.Icon icon={c.icon} />}
+                        secureTextEntry={c.secureTextEntry && !showPass}
+                        right={<TextInput.Icon icon={c.icon} onPress={() => setShowPass(!showPass)} />}
                     />)
                 }  
 

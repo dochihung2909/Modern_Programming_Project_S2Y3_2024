@@ -11,12 +11,13 @@ import Post from '../Post/Post';
 import InputPostNavigate from '../Post/InputPostNavigate';
 import { adjustImageTo16x9, formatUrl } from '../../dao';
 import Setting from './Setting';
+import LoadingScreen from '../LoadingScreen';
 
 
 export default function Profile({route, navigation}) {  
  
   const { user, logout, update } = useAuth(); 
-  console.log(user)
+  // console.log(user)
   // console.log(user)
   let userId = user.id
 
@@ -35,24 +36,33 @@ export default function Profile({route, navigation}) {
   // Posts
   const [posts, setPosts] = useState([]) 
   const [nextPost, setNextPost] = useState('')
+  const [loading, setLoading] = useState(false)
 
   // Load post by user id 
   const loadPosts = async () => {
     const access_token = await AsyncStorage.getItem('token')
-    if (userId !== user.id) {
-      let res = await authApi(access_token).get(endpoints['posts']);     
-      let ps = res.data.results 
-      setNextPost(res.data.next)
-      ps = ps.filter(p => p.user.id == userId)    
-      setPosts(ps) 
-    } else {
-      const posts = await authApi(access_token).get(endpoints['current_user_posts']);    
-      setPosts(posts.data)   
-    } 
-
-    let likedRes = await authApi(access_token).get(endpoints['posts_user_liked_by_id'](user.id))
-    console.log(likedRes.data) 
-    setLikedList(likedRes.data)
+    setLoading(true)
+    try {
+      if (userId !== user.id) {
+        let res = await authApi(access_token).get(endpoints['posts']);     
+        let ps = res.data.results 
+        setNextPost(res.data.next)
+        ps = ps.filter(p => p.user.id == userId)    
+        setPosts(ps) 
+      } else {
+        const posts = await authApi(access_token).get(endpoints['current_user_posts']);    
+        setPosts(posts.data)   
+      } 
+      
+      let likedRes = await authApi(access_token).get(endpoints['posts_user_liked_by_id'](user.id))
+      // console.log(likedRes.data) 
+      setLikedList(likedRes.data) 
+    } catch (err) {
+      console.error(err)
+      setLoading(false)
+    } finally{
+      setLoading(false)
+    }
   }
 
   const role_types = ['Quản trị viên', 'Cựu sinh viên', 'Giảng viên']
@@ -62,7 +72,7 @@ export default function Profile({route, navigation}) {
     let like_type = -1
     likedList.find(liked => {
       if (liked.id == postId) { 
-        console.log(liked.id, postId)
+        // console.log(liked.id, postId)
         like_type = liked.like_type.id  
       }
     })
@@ -73,17 +83,25 @@ export default function Profile({route, navigation}) {
   const loadUserInfo = async () => { 
     if (userId != user.id) {
       const access_token = await AsyncStorage.getItem('token') 
-      let res = await authApi(access_token).get(endpoints['users_id'](userId));
-      let userData = res.data 
-      userData.avatar = formatUrl(userData.avatar)
-      userData = {
-        id: userId,
-        ...userData
+      setLoading(true)
+      try {
+        let res = await authApi(access_token).get(endpoints['users_id'](userId));
+        let userData = res.data 
+        userData.avatar = formatUrl(userData.avatar)
+        userData = {
+          id: userId,
+          ...userData
+        }
+        if (res.status == 200) {
+          console.log('get user success')
+        }      
+        setUserInfo(userData)  
+      } catch(err) {
+        console.error(err)
+        setLoading(false)
+      } finally {
+        setLoading(false)
       }
-      if (res.status == 200) {
-        console.log('get user success')
-      }      
-      setUserInfo(userData) 
     } 
   }
 
@@ -91,7 +109,7 @@ export default function Profile({route, navigation}) {
     if (userId == user.id) {
       const access_token = await AsyncStorage.getItem('token')
       let res = await authApi(access_token).get(endpoints['current_user']);
-      console.log(res.data)
+      // console.log(res.data)
       update(res.data)
       setUserInfo(res.data)
     } 
@@ -139,7 +157,7 @@ export default function Profile({route, navigation}) {
 
   const handleMessage = async (userId) => {
     const access_token = await AsyncStorage.getItem('token')
-    console.log(userId) 
+    // console.log(userId) 
     let form = new FormData()
     // Add target user to chat
     form.append('target_user_id', userId)
@@ -149,7 +167,7 @@ export default function Profile({route, navigation}) {
         'Content-Type': 'multipart/form-data'
       }
     })
-    console.log(res.data)
+    // console.log(res.data)
     let roomInfo = res.data 
     if (res.status == '201') {
       const roomRes = await authApi(access_token).post(endpoints['chat_with_target_user'], form, {
@@ -159,10 +177,10 @@ export default function Profile({route, navigation}) {
       })
       roomInfo = roomRes.data 
     }  
-    console.log(roomInfo)
+    // console.log(roomInfo)
     
     let targetUser = roomInfo.users.find(u => u.id != user.id)
-    console.log(targetUser)
+    // console.log(targetUser)
     navigation.navigate('Room', { 
       targetUser: targetUser,
       id: roomInfo.room.id
@@ -210,6 +228,7 @@ export default function Profile({route, navigation}) {
 
   return (
     <>
+      {loading ? <LoadingScreen></LoadingScreen> :
       <ScrollView 
         onScroll={({nativeEvent}) => {
           if (isCloseToBottom(nativeEvent)) {
@@ -282,6 +301,7 @@ export default function Profile({route, navigation}) {
             {posts.map(post => (<Post loadPosts={loadPosts} isCurrentLiked={checkLiked(post.id)} refreshing={refreshing} navigation={navigation} key={post.id} post={post}></Post>))}
           </View>  
       </ScrollView> 
+      }
     </>
     
   )

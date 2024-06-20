@@ -6,25 +6,36 @@ import APIs, {endpoints, authApi} from '../../configs/APIs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect, useIsFocused } from '@react-navigation/native';
 import InputPostNavigate from '../Post/InputPostNavigate';
+import LoadingScreen from '../LoadingScreen';
 
 export default function Home({navigation}) {
   const { user} = useAuth();   
   const isFocused = useIsFocused(); 
   const [posts, setPosts] = useState([]) 
   const [loading, setLoading] = useState(false)
+  const [loadScreen, setLoadScreen] = useState(false)
   const [nextPost, setNextPost] = useState('')
   const [likedList, setLikedList] = useState([])
 
   const loadPosts = async () => {
     const access_token = await AsyncStorage.getItem('token')
-    let res = await authApi(access_token).get(endpoints['posts']);   
-    let ps = res.data.results  
-    setNextPost(res.data.next)
-    setPosts(ps)    
-
-    let likedRes = await authApi(access_token).get(endpoints['posts_user_liked_by_id'](user.id))
-    // console.log(likedRes.data) 
-    setLikedList(likedRes.data)
+    setLoadScreen(true)
+    try {
+      let res = await authApi(access_token).get(endpoints['posts']);   
+      let ps = res.data.results  
+      setNextPost(res.data.next)
+      setPosts(ps)    
+  
+      let likedRes = await authApi(access_token).get(endpoints['posts_user_liked_by_id'](user.id))
+      // console.log(likedRes.data) 
+      setLikedList(likedRes.data)
+    } catch (err) {
+      console.error(err)
+      setLoadScreen(false) 
+    } finally {
+      setLoadScreen(false)
+    }
+    
   }     
 
   const checkLiked = (postId) => {
@@ -90,20 +101,25 @@ export default function Home({navigation}) {
   };
 
   return (
-    <ScrollView 
-      onScroll={({nativeEvent}) => {
-        if (isCloseToBottom(nativeEvent)) {
-          console.log('End screent', nextPost)
-          if (nextPost && !loading) { 
-            setLoading(true) 
-            loadMorePost();
-          }
-        }
-      }} 
-      className={'bg-white'} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
-      
-      <InputPostNavigate user={user} handleNavigateInputPost={handleNavigateInputPost}></InputPostNavigate> 
-      {posts.map(post => <Post loadPosts={loadPosts} isCurrentLiked={checkLiked(post.id)} refreshing={refreshing} navigation={navigation} key={post.id} post={post}></Post>)} 
-    </ScrollView>
+    <>
+      {loadScreen ? <LoadingScreen></LoadingScreen> : 
+        <ScrollView 
+          onScroll={({nativeEvent}) => {
+            if (isCloseToBottom(nativeEvent)) {
+              console.log('End screent', nextPost)
+              if (nextPost && !loading) { 
+                setLoading(true) 
+                loadMorePost();
+              }
+            }
+          }} 
+          className={'bg-white'} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+          
+          <InputPostNavigate user={user} handleNavigateInputPost={handleNavigateInputPost}></InputPostNavigate> 
+          {posts.map(post => <Post loadPosts={loadPosts} isCurrentLiked={checkLiked(post.id)} refreshing={refreshing} navigation={navigation} key={post.id} post={post}></Post>)} 
+        </ScrollView>
+      }
+    </>
+    
   )
 }
