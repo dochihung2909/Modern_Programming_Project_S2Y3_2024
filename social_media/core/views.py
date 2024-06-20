@@ -244,8 +244,8 @@ class UserViewSet(viewsets.ViewSet,
                                                                     context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @action(methods=['post'], url_path='check_password', detail=True)
-    def check_pass(self, request):
+    @action(methods=['post'], url_path='current-user/check_password', detail=False)
+    def check_password(self, request):
         user = request.user
         current_password = request.data.get('current_password')
         if not current_password:
