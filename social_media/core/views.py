@@ -244,15 +244,26 @@ class UserViewSet(viewsets.ViewSet,
                                                                     context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @action(methods=['post'], url_path='current-user/check_password', detail=False)
-    def check_password(self, request):
+    @action(methods=['patch'], url_path='current-user/change_password', detail=False)
+    def change_password(self, request):
         user = request.user
+
+        required_fields = ['current_password', 'new_password']
+        missing_fields = [field for field in required_fields if not request.data.get(field)]
+        if missing_fields:
+            return Response({'error': f"{', '.join(missing_fields)} required"},
+                            status=status.HTTP_400_BAD_REQUEST)
+        new_password = request.data.get('new_password')
         current_password = request.data.get('current_password')
-        if not current_password:
-            return Response({'error': 'current_password required'})
         if not user.check_password(current_password):
             return Response({'error': 'Wrong password'}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({'status': 'Correct password'}, status=status.HTTP_200_OK)
+        if current_password == new_password:
+            return Response({'message': 'New password must different old password'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(new_password)
+        user.save()
+
+        return Response(serializers.UserSerializer(user).data, status=status.HTTP_200_OK)
 
 
 class CommentViewSet(viewsets.ViewSet,
