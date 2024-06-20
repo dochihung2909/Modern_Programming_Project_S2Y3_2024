@@ -172,9 +172,10 @@ class Answer(BaseModel):
 
 class Group(BaseModel):
     name = models.CharField(max_length=50, null=False)
+    room = models.ForeignKey(Room, on_delete=models.CASCADE, null=True)
 
-    # def __str__(self):
-    #     return self.name
+    def __str__(self):
+        return self.name
 
     def add_user(self, user):
         if JoinGroup.objects.filter(user=user).exists():
@@ -197,6 +198,7 @@ class Notification(BaseModel):
     title = models.CharField(max_length=255, null=False)
     content = RichTextField()
     group = models.ForeignKey(Group, on_delete=models.CASCADE, null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
 
     def __str__(self):
         return self.title

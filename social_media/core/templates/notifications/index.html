@@ -1,38 +1,176 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng thông báo</title>
-    <!-- Include Tailwind CSS -->
+    <title>Tạo Thông Báo</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.tiny.cloud/1/oz1ktb9xpqxn3n6s5q34ydmnix5cea3zuanf9doavaumb2ji/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
 </head>
+<body class="bg-gray-100 p-6">
+<div class="max-w-3xl mx-auto bg-white p-8 rounded-lg shadow-md">
+    <h1 class="text-2xl font-bold mb-6">Tạo Thông Báo</h1>
+    <form>
+                 <!-- Title Field -->
+        <div class="mb-4">
+            <label for="title" class="block text-gray-700 font-bold mb-2">Tiêu đề</label>
+            <input type="text" id="title" name="title" class="w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+            <span id="titleError" class="text-red-500 text-sm hidden">Title không được để trống.</span>
+        </div>
 
-<body class="bg-gray-100">
-    <div class="max-w-lg mx-auto mt-10 p-6 bg-white rounded shadow-md">
-        <h2 class="text-xl font-semibold mb-4">Đăng thông báo</h2>
-        <form action="/submit" method="POST">
-            <div class="mb-4">
-                <label for="title" class="block text-sm font-medium text-gray-700">Tiêu đề</label>
-                <input type="text" id="title" name="title" class="mt-1 block w-full px-3 py-2 border rounded-md
-                    shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-            </div>
-            <div class="mb-4">
-                <label for="content" class="block text-sm font-medium text-gray-700">Nội dung</label>
-                <textarea id="content" name="content" rows="4" class="mt-1 block w-full px-3 py-2 border
-                    rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
-            </div>
-            <div class="flex justify-end">
-                <button type="submit"
-                    class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md
-                    shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none
-                    focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    Đăng bài
-                </button>
-            </div>
-        </form>
-    </div>
+        <!-- Content Field (RichTextBox) -->
+        <div class="mb-4">
+            <label for="content" class="block text-gray-700 font-bold mb-2">Nội dung</label>
+            <textarea id="content" name="content" class="w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+            <span id="contentError" class="text-red-500 text-sm hidden">Content không được để trống.</span>
+        </div>
+
+        <!-- Loại thông báo -->
+        <div class="mb-4">
+            <label for="type" class="block text-gray-700 font-bold mb-2">Loại</label>
+            <select id="type" name="type" class="w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="global">Toàn bộ</option>
+                <option value="individual">Cá nhân</option>
+                <option value="group">Nhóm</option>
+            </select>
+        </div>
+
+        <!-- Group Selection (hidden by default) -->
+        <div id="group-selection" class="mb-4 hidden">
+            <label for="group" class="block text-gray-700 font-bold mb-2">Chọn Group</label>
+            <select id="group" name="group" class="w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                {% for group in groups %}
+                    <option value="{{ group.id }}">{{ group.name }}</option>
+                {% endfor %}
+                <!-- Thêm các group khác tại đây -->
+            </select>
+        </div>
+
+        <div id="user-selection" class="mb-4 hidden">
+            <label for="user" class="block text-gray-700 font-bold mb-2">Chọn User</label>
+            <select id="user" name="group" class="w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                {% for user in users %}
+                    <option value="{{ user.id }}">{{ user.first_name }} {{ user.last_name }} ({{ user.username }})</option>
+                {% endfor %}
+                <!-- Thêm các group khác tại đây -->
+            </select>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="button" onclick="handlePostNotification()" class="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">Tạo Thông Báo</button>
+
+    </form>
+   </div>
+
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.js"></script>
+<!-- Script to toggle group selection -->
+<script>
+    document.getElementById('type').addEventListener('change', function() {
+        const groupSelection = document.getElementById('group-selection');
+        if (this.value === 'group') {
+            groupSelection.classList.remove('hidden');
+        } else {
+            groupSelection.classList.add('hidden');
+        }
+    });
+
+    document.getElementById('type').addEventListener('change', function() {
+        const groupSelection = document.getElementById('user-selection');
+        if (this.value === 'individual') {
+            groupSelection.classList.remove('hidden');
+        } else {
+            groupSelection.classList.add('hidden');
+        }
+    });
+
+
+</script>
+
+<script>
+  tinymce.init({
+    selector: 'textarea',
+    plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount checklist mediaembed casechange export formatpainter pageembed linkchecker a11ychecker tinymcespellchecker permanentpen powerpaste advtable advcode editimage advtemplate ai mentions tinycomments tableofcontents footnotes mergetags autocorrect typography inlinecss markdown',
+    toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
+    tinycomments_mode: 'embedded',
+    tinycomments_author: 'Author name',
+    mergetags_list: [
+      { value: 'First.Name', title: 'First Name' },
+      { value: 'Email', title: 'Email' },
+    ],
+    ai_request: (request, respondWith) => respondWith.string(() => Promise.reject("See docs to implement AI Assistant")),
+  });
+</script>
+
+
+<script>
+    function validateForm() {
+        let isValid = true;
+
+        const title = document.getElementById('title');
+        const content = tinymce.get('content').getContent();
+        const titleError = document.getElementById('titleError');
+        const contentError = document.getElementById('contentError');
+
+        if (title.value.trim() === '') {
+            titleError.classList.remove('hidden');
+            isValid = false;
+        } else {
+            titleError.classList.add('hidden');
+        }
+
+        if (content.trim() === '') {
+            contentError.classList.remove('hidden');
+            isValid = false;
+        } else {
+            contentError.classList.add('hidden');
+        }
+
+        return isValid;
+    }
+
+    const handlePostNotification = async () => {
+        if (validateForm()) {
+            let title = document.querySelector('#title').value
+            let content = tinymce.get('content').getContent()
+            let type = document.querySelector('#type').value
+            let user
+            let group
+            if (type == 'individual') {
+                user = document.querySelector('#user').value
+            } else if (type == 'group') {
+                group = document.querySelector('#group').value
+            }
+            let form = new FormData()
+            form.append('title', title)
+            form.append('content', content)
+            form.append('type', type)
+            if (type == 'individual') {
+                form.append('user_id', user)
+            } else if (type == 'group') {
+                form.append('group_id', group)
+            }
+            console.log(form, title,content, type, user, group)
+            let url = window.location.origin + '/notification/add_notification/'
+            console.log(url)
+            try {
+                const res = await axios.post(url, form, {
+                headers: {
+                        'Authorization': `Bearer {{ token }}`,
+                        'Content-type': 'multipart/form-data'
+                    }
+                })
+
+                console.log(res.data)
+            } catch (err) {
+                console.log(err)
+            }
+        }
+
+    }
+</script>
+
 </body>
-
 </html>

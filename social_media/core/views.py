@@ -1,4 +1,5 @@
 from django.conf import settings
+import re
 from django.contrib.auth.decorators import user_passes_test
 from django.core.mail import send_mail
 from django.shortcuts import render, redirect
@@ -193,6 +194,22 @@ class UserViewSet(viewsets.ViewSet,
         serializer = serializers.JoinRoomSerializer(rooms, many=True)
         return Response(serializer.data)
 
+    @action(methods=['get'], url_path='current-user/groups', detail=False)
+    def get_groups(self, request):
+        user = request.user
+        groups = JoinGroup.objects.filter(user=user)
+        serializer = serializers.JoinGroupSerializer(groups, many=True)
+        return Response(serializer.data)
+
+    @action(methods=['get'], url_path='current-user/notifications', detail=False)
+    def get_notification(self, request):
+        user = request.user
+        groups = [Group.objects.get(id=join.group.id) for join in JoinGroup.objects.filter(user=user)]
+        notifications = [Notification.objects.filter(group=group) for group in groups]
+        notifications.append(Notification.objects.filter(group__isnull=True))
+        serializerss = [serializers.NotificationSerializer(noti, many=True) for noti in notifications]
+        return Response([serializer.data for serializer in serializerss][0])
+
     @action(methods=['get'], url_path='posts', detail=True)
     def get_posts(self, request, pk):
         user = self.get_object()
@@ -259,6 +276,22 @@ class UserViewSet(viewsets.ViewSet,
             return Response({'error': 'Wrong password'}, status=status.HTTP_400_BAD_REQUEST)
         if current_password == new_password:
             return Response({'message': 'New password must different old password'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # if len(new_password) < 8:
+        #     return Response({'error': 'Password must be at least 8 characters long.'})
+        # if sum(c.isdigit() for c in new_password) < 1:
+        #     return Response({'error': 'Password must contain at least 1 number.'})
+        # if not any(c.isupper() for c in new_password):
+        #     return Response({'error': 'Password must contain at least 1 uppercase letter.'})
+        # if not any(c.islower() for c in new_password):
+        #     return Response({'error': 'Password must contain at least 1 lowercase letter.'})
+
+        regex = re.compile(r'^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$')
+        if not regex.match(new_password):
+            return Response({
+                'error': 'Password must be at least 8 characters long, '
+                         'contain at least 1 number, 1 uppercase letter, and 1 lowercase letter.'
+            }, status=status.HTTP_400_BAD_REQUEST)
 
         user.set_password(new_password)
         user.save()
@@ -460,8 +493,8 @@ class LecturerRegister(viewsets.ViewSet, generics.CreateAPIView):
 
         if User.objects.filter(username=username).exists():
             return Response({'error': 'username already exists'}, status=status.HTTP_400_BAD_REQUEST)
-        if User.objects.filter(email=email).exists():
-            return Response({'error': 'email already exists'}, status=status.HTTP_400_BAD_REQUEST)
+        # if User.objects.filter(email=email).exists():
+        #     return Response({'error': 'email already exists'}, status=status.HTTP_400_BAD_REQUEST)
         if first_name == last_name:
             return Response({'error': 'first name and last name must be different'})
 
@@ -635,20 +668,11 @@ class GroupViewSet(viewsets.ViewSet,
             'participants': serializers.UserSerializer(users, many=True).data
         })
 
-    @action(methods=['post'], detail=False, url_path='add_group')
-    def add_group(self, request):
-        g = Group.objects.create(name=request.data.get('name'))
-        return Response(serializers.GroupSerializer(g).data,
-                        status=status.HTTP_201_CREATED)
-
-    @action(methods=['post'], detail=True, url_path='add_user')
-    def add_user_to_group(self, request, pk):
+    @action(methods=['post'], detail=False, url_path='create_group')
+    def create_group(self, request):
         try:
-
-            group = self.get_object()
-            print(group.id)
+            group = Group.objects.create(name=request.data.get('name'))
             list_user_id = request.data.get('list_user_id', [])
-            # print(list_user_id)
             if not list_user_id:
                 return Response(
                     {'error': 'list_user_id is required'},
@@ -658,17 +682,7 @@ class GroupViewSet(viewsets.ViewSet,
             for user_id in list_user_id:
                 user = User.objects.get(id=user_id)
                 if user:
-                    join_group = JoinGroup.objects.get(user=user, group=group)
-                    if join_group:
-                        return Response(
-                            {
-                                'message': f'User is already in this group',
-                                'user': serializers.UserSerializer(user).data
-                            },
-                            status=status.HTTP_400_BAD_REQUEST
-                        )
-                    else:
-                        group.add_user(user=user)
+                    group.add_user(user=user)
             return Response(
                 {'message': 'Users added to group successfully'},
                 status=status.HTTP_200_OK
@@ -689,6 +703,17 @@ class GroupViewSet(viewsets.ViewSet,
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+    @action(methods=['post'], detail=True, url_path='create_chat_room')
+    def add_chat_room(self, request, pk):
+        group = self.get_object()
+        joins = JoinGroup.objects.filter(group=group)
+        room = Room.objects.create(title=group.name, room_type='group')
+        for join in joins:
+            room.add_user(join.user)
+
+        return Response(serializers.RoomSerializer(room).data,
+                        status=status.HTTP_201_CREATED)
+
 
 class NotificationViewSet(viewsets.ViewSet,
                           generics.ListAPIView,
@@ -699,8 +724,10 @@ class NotificationViewSet(viewsets.ViewSet,
     permission_classes = [perms.OwnerAuthenticated | perms.IsSuperUser]
 
     def get_permissions(self):
-        if self.action in ['add_notification', 'retrieve']:
+        if self.action in ['retrieve']:
             return [permissions.IsAuthenticated()]
+        if self.action in ['add_notification']:
+            return [permissions.AllowAny()]
 
         return [permission() for permission in self.permission_classes]
 
@@ -714,30 +741,41 @@ class NotificationViewSet(viewsets.ViewSet,
 
     @action(methods=['post'], detail=False, url_path='add_notification')
     def add_notification(self, request):
+        required_fields = ['title', 'content', 'type']
+        missing_fields = [field for field in required_fields if not request.data.get(field)]
+        if missing_fields:
+            return Response({'error': f"{', '.join(missing_fields)} required"},
+                            status=status.HTTP_400_BAD_REQUEST)
+
         title = request.data.get('title')
         content = request.data.get('content')
-        group_id = request.data.get('group_id')
+        type = request.data.get('type')
 
-        print(group_id)
-
-        if not title:
-            return Response(
-                {'error': 'title is required'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        if not content:
-            return Response(
-                {'error': 'content is required'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
         try:
-            if group_id:
-                group = Group.objects.get(id=group_id)
-                print(group)
-                n = Notification.objects.create(title=title, content=content, group=group)
+            if type == 'group':
+                group_id = request.data.get('group_id')
+                if group_id:
+                    group = Group.objects.get(id=group_id)
+                    print(group)
+                    n = Notification.objects.create(title=title, content=content, group=group)
 
-                emails = [User.objects.get(id=user.id).email for user in JoinGroup.objects.filter(group=group)]
+                    emails = [User.objects.get(id=user.id).email for user in JoinGroup.objects.filter(group=group)]
+
+                    subject = title
+                    message = (f'{title}\n'
+                               f'{content}\n'
+                               f'Cảm ơn.')
+                    from_email = settings.EMAIL_HOST_USER
+                    recipient_list = emails
+                    send_mail(subject, message, from_email, recipient_list, fail_silently=False)
+                else:
+                    n = Notification.objects.create(title=title, content=content)
+                return Response(serializers.NotificationSerializer(n).data,
+                                status=status.HTTP_201_CREATED)
+            elif type == 'global':
+                n = Notification.objects.create(title=title, content=content)
+
+                emails = [User.objects.get(id=user.id).email for user in User.objects.all()]
 
                 subject = title
                 message = (f'{title}\n'
@@ -746,12 +784,29 @@ class NotificationViewSet(viewsets.ViewSet,
                 from_email = settings.EMAIL_HOST_USER
                 recipient_list = emails
                 send_mail(subject, message, from_email, recipient_list, fail_silently=False)
-            else:
-                n = Notification.objects.create(title=title, content=content)
+            elif type == 'individual':
+                user_id = request.data.get('user_id')
+                if user_id:
+                    userr = User.objects.get(pk=user_id)
+                    n = Notification.objects.create(title=title, content=content, user=userr)
+
+                    email = User.objects.get(pk=user_id).email
+
+                    subject = title
+                    message = (f'{title}\n'
+                               f'{content}\n'
+                               f'Cảm ơn.')
+                    from_email = settings.EMAIL_HOST_USER
+                    recipient_list = [email]
+                    send_mail(subject, message, from_email, recipient_list, fail_silently=False)
+            # else:
+            #     n = Notification.objects.create(title=title, content=content)
             return Response(serializers.NotificationSerializer(n).data,
                             status=status.HTTP_201_CREATED)
         except Group.DoesNotExist:
             return Response(
-                {'error': 'Group not found'},
+                {'error': 'Input invalid'},
                 status=status.HTTP_404_NOT_FOUND
             )
+
+

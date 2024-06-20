@@ -7,6 +7,8 @@ from django.template.response import TemplateResponse
 from django.urls import path
 from django.utils.html import strip_tags
 from django.utils.safestring import mark_safe
+import os
+import requests
 
 from core import dao
 from core.forms import PostForm, LikeCommentAdminForm
@@ -141,6 +143,7 @@ class MySocialMediaAdminSite(admin.AdminSite):
         return [
             path('stats/', self.stats_view),
             path('register_lecturer/', self.register_lecturer_view),
+            path('notification/', self.notification_view),
         ] + super().get_urls()
 
     def stats_view(self, request):
@@ -154,6 +157,25 @@ class MySocialMediaAdminSite(admin.AdminSite):
 
     def register_lecturer_view(self, request):
         return TemplateResponse(request, 'admin/register_lecturer.html')
+
+    def notification_view(self, request):
+
+        token_url = os.getenv('URL_SERVER') + 'o/token/'  # Thay thế bằng URL của endpoint token của bạn
+        data = {
+            'grant_type': 'password',
+            'username': 'admin',
+            'password': '123',
+            'client_id': os.getenv('CLIENT_ID_OAUTH'),
+            'client_secret': os.getenv('CLIENT_SECRET_OAUTH'),
+        }
+        response = requests.post(token_url, data=data)
+        groups = Group.objects.all()
+        context = {
+            'groups': groups,
+            'users': User.objects.all(),
+            'token': response.json()['access_token'],
+        }
+        return TemplateResponse(request, 'notifications/index.html', context)
 
 
 class AlumniAdmin(admin.ModelAdmin):
