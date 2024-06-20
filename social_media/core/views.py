@@ -706,13 +706,23 @@ class GroupViewSet(viewsets.ViewSet,
     @action(methods=['post'], detail=True, url_path='create_chat_room')
     def add_chat_room(self, request, pk):
         group = self.get_object()
+
+        if group.room:
+            return Response({'error': 'Group already has a room'}, status=status.HTTP_400_BAD_REQUEST)
+
         joins = JoinGroup.objects.filter(group=group)
-        room = Room.objects.create(title=group.name, room_type='group')
+        title_room = 'Room of group ' + group.name
+        room = Room.objects.create(title=title_room, room_type='group')
         for join in joins:
             room.add_user(join.user)
 
-        return Response(serializers.RoomSerializer(room).data,
-                        status=status.HTTP_201_CREATED)
+        group.room = room
+        group.save()
+
+        return Response({
+            'group': serializers.GroupSerializer(group).data,
+            'room': serializers.RoomSerializer(room).data,
+        }, status=status.HTTP_201_CREATED)
 
 
 class NotificationViewSet(viewsets.ViewSet,
