@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.0.4/dist/tailwind.min.css" rel="stylesheet">
+    <title>Survey Form</title>
+</head>
+<body>
+    <div class="container mx-auto p-4">
+        <h1 class="text-2xl font-bold mb-4">Create Survey</h1>
+        <form method="POST" action="/survey_commit/">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label for="title" class="block text-gray-700">Title</label>
+                <input type="text" id="title" name="title" class="w-full p-2 border border-gray-300 rounded mt-1">
+            </div>
+            <div class="mb-4">
+                <label for="description" class="block text-gray-700">Description</label>
+                <textarea id="description" name="description" class="w-full p-2 border border-gray-300 rounded mt-1"></textarea>
+            </div>
+            <div id="questions">
+                <div class="mb-4">
+                    <label for="question_1" class="block text-gray-700">Question 1</label>
+                    <input type="text" id="question_1" name="questions[]" class="w-full p-2 border border-gray-300 rounded mt-1">
+                </div>
+            </div>
+            <button type="button" id="add-question" class="bg-blue-500 text-white px-4 py-2 rounded">Add Question</button>
+            <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded mt-4">Submit</button>
+        </form>
+    </div>
+    <script>
+        document.getElementById('add-question').addEventListener('click', function() {
+            const questionCount = document.querySelectorAll('#questions > div').length;
+            const questionNumber = questionCount + 1;
+            const newQuestion = `
+                <div class="mb-4">
+                    <label for="question_${questionNumber}" class="block text-gray-700">Question ${questionNumber}</label>
+                    <input type="text" id="question_${questionNumber}" name="questions[]" class="w-full p-2 border border-gray-300 rounded mt-1">
+                </div>`;
+            document.getElementById('questions').insertAdjacentHTML('beforeend', newQuestion);
+        });
+    </script>
+</body>
+</html>

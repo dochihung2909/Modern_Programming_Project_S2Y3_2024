@@ -12,6 +12,8 @@ router.register('like_types', views.LikeTypeViewSet, basename='like_types')
 router.register('register_lecturer', views.LecturerRegister, basename='register_lecturer')
 router.register('register_alumni', views.AlumniRegister, basename='register_alumni')
 router.register('login', views.LoginViewSet, basename='login')
+router.register('group', views.GroupViewSet, basename='group')
+router.register('notification', views.NotificationViewSet, basename='notification')
 
 urlpatterns = [
     path('', include(router.urls)),

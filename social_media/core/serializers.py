@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Post, Tag, User, Comment, Room, Message, JoinRoom, Like, LikeType, LikePost
+from .models import Post, Tag, User, Comment, Room, Message, JoinRoom, Like, LikeType, LikePost, Group, JoinGroup, \
+    Notification
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -103,7 +104,6 @@ class PostSerializer(serializers.ModelSerializer):
 class PostDetailsSerializer(PostSerializer):
     tags = TagSerializer(many=True)
 
-
     class Meta:
         model = PostSerializer.Meta.model
         fields = PostSerializer.Meta.fields + ['tags']
@@ -205,7 +205,6 @@ class LikeTypeSerializer(serializers.ModelSerializer):
 
 
 class RoomSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Room
         fields = ['id', 'title', 'room_type']
@@ -224,3 +223,26 @@ class JoinRoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = JoinRoom
         fields = ['id', 'user', 'room', 'created_date']
+
+
+class GroupSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Group
+        fields = ['id', 'name', 'created_date']
+
+
+class JoinGroupSerializer(serializers.ModelSerializer):
+    user = UserDetailSerializer()
+    group = GroupSerializer()
+
+    class Meta:
+        model = JoinGroup
+        fields = ['id', 'user', 'group', 'created_date']
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    group = GroupSerializer()
+
+    class Meta:
+        model = Notification
+        fields = ['id', 'title', 'content', 'group', 'created_date']

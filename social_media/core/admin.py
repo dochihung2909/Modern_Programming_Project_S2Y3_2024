@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.contrib.auth.models import Permission, Group
+from django.contrib.auth.models import Permission
 from django.db.models import Count
 from django.db.models.functions import TruncMonth, TruncYear, TruncQuarter
 from django.http import JsonResponse
@@ -10,7 +10,8 @@ from django.utils.safestring import mark_safe
 
 from core import dao
 from core.forms import PostForm, LikeCommentAdminForm
-from core.models import User, Post, Tag, Comment, LikePost, LikeComment, Role, LikeType, Room, Message, JoinRoom, Alumni
+from core.models import User, Post, Tag, Comment, LikePost, LikeComment, Role, LikeType, Room, Message, JoinRoom, \
+    Alumni, Notification, JoinGroup, Group
 
 
 class PostAdmin(admin.ModelAdmin):
@@ -165,9 +166,20 @@ class AlumniAdmin(admin.ModelAdmin):
     approve_users.short_description = "Approve selected users"
 
 
+class GroupAdmin(admin.ModelAdmin):
+    list_display = ['id', 'name', 'created_date', 'active']
+
+
+class JoinGroupAdmin(admin.ModelAdmin):
+    list_display = ['id', 'user', 'group', 'active']
+
+
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ['id', 'title', 'group', 'active']
+
+
 admin_site = MySocialMediaAdminSite(name='iSocialMedia')
 
-admin_site.register(Group)
 admin_site.register(Permission)
 admin_site.register(Role, RoleAdmin)
 admin_site.register(User, UserAdmin)
@@ -181,4 +193,7 @@ admin_site.register(Room, RoomAdmin)
 admin_site.register(Message, MessageAdmin)
 admin_site.register(JoinRoom, JoinRoomAdmin)
 admin_site.register(Alumni, AlumniAdmin)
+admin_site.register(Group, GroupAdmin)
+admin_site.register(Notification, NotificationAdmin)
+admin_site.register(JoinGroup, JoinGroupAdmin)
 

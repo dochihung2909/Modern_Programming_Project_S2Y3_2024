@@ -168,3 +168,36 @@ class Answer(BaseModel):
     user_response = models.ForeignKey(UserResponse, on_delete=models.CASCADE)
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     choice = models.IntegerField(choices=CHOICES)
+
+
+class Group(BaseModel):
+    name = models.CharField(max_length=50, null=False)
+
+    # def __str__(self):
+    #     return self.name
+
+    def add_user(self, user):
+        if JoinGroup.objects.filter(user=user).exists():
+            raise ValueError("User is already in this group")
+        JoinGroup.objects.create(group=self, user=user)
+
+
+class JoinGroup(BaseModel):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.user.username} in {self.group.name}"
+
+    class Meta:
+        unique_together = ('user', 'group')
+
+
+class Notification(BaseModel):
+    title = models.CharField(max_length=255, null=False)
+    content = RichTextField()
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, null=True)
+
+    def __str__(self):
+        return self.title
+

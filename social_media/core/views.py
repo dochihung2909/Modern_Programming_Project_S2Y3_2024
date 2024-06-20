@@ -9,7 +9,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from core import serializers, paginators, perms
-from .models import Post, User, Comment, LikePost, LikeComment, Room, JoinRoom, LikeType, Role, Alumni
+from .models import Post, User, Comment, LikePost, LikeComment, Room, JoinRoom, LikeType, Role, Alumni, Group, \
+    JoinGroup, Notification
 
 
 class PostViewSet(viewsets.ViewSet,
@@ -40,7 +41,6 @@ class PostViewSet(viewsets.ViewSet,
 
         return [permission() for permission in self.permission_classes]
 
-
     def get_serializer_class(self):
         if self.request.user.is_authenticated:
             return serializers.AuthenticatedPostDetailsSerializer
@@ -59,16 +59,19 @@ class PostViewSet(viewsets.ViewSet,
         post = self.get_object()
 
         if request.method == 'POST':
-            content = request.data.get('content')
-            if not content:
-                return Response({"detail": "Content is required."},
-                                status=status.HTTP_400_BAD_REQUEST)
+            if not post.block_comment:
+                content = request.data.get('content')
+                print(content)
+                if not content:
+                    return Response({"detail": "Content is required."},
+                                    status=status.HTTP_400_BAD_REQUEST)
 
-            c = Comment.objects.create(post=post,
-                                       content=content,
-                                       user=request.user)
-            return Response(serializers.CommentSerializer(c).data,
-                            status=status.HTTP_201_CREATED)
+                c = Comment.objects.create(post=post,
+                                           content=content,
+                                           user=request.user)
+                return Response(serializers.CommentSerializer(c).data,
+                                status=status.HTTP_201_CREATED)
+            return Response({'error': 'Post has block comment'}, status=status.HTTP_400_BAD_REQUEST)
 
         elif request.method == 'GET':
             c = post.comment_set.filter(active=True).order_by('-created_date')
@@ -242,7 +245,7 @@ class UserViewSet(viewsets.ViewSet,
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(methods=['post'], url_path='check_password', detail=True)
-    def check_password(self, request):
+    def check_pass(self, request):
         user = request.user
         current_password = request.data.get('current_password')
         if not current_password:
@@ -250,7 +253,6 @@ class UserViewSet(viewsets.ViewSet,
         if not user.check_password(current_password):
             return Response({'error': 'Wrong password'}, status=status.HTTP_400_BAD_REQUEST)
         return Response({'status': 'Correct password'}, status=status.HTTP_200_OK)
-
 
 
 class CommentViewSet(viewsets.ViewSet,
@@ -453,10 +455,10 @@ class LecturerRegister(viewsets.ViewSet, generics.CreateAPIView):
             return Response({'error': 'first name and last name must be different'})
 
         subject = 'Chào mừng tới Mạng Xã Hội Cựu Sinh Viên by HungTS and ngHung'
-        message = (f'Chào mứng {first_name} {last_name} có {email} đến với Mạng Xã Hội Cựu Sinh Viên'
-                   f'mật khẩu của bạn là @ou123.'
-                   f'Hãy đổi mật khẩu trong vòng 24 giờ.'
-                   f'Nếu sau khoảng thời gian này bạn cần liên hệ với admin thông qua email này.'
+        message = (f'Chào mứng {first_name} {last_name} có {email} đến với Mạng Xã Hội Cựu Sinh Viên\n'
+                   f'mật khẩu của bạn là @ou123\n'
+                   f'Hãy đổi mật khẩu trong vòng 24 giờ.\n'
+                   f'Nếu sau khoảng thời gian này bạn cần liên hệ với admin thông qua email này.\n'
                    f'Cảm ơn.')
         from_email = settings.EMAIL_HOST_USER
         recipient_list = [email]
@@ -533,7 +535,7 @@ class AlumniRegister(viewsets.ViewSet, generics.CreateAPIView):
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    
+
 class LoginViewSet(viewsets.ViewSet):
     permission_classes = [permissions.AllowAny]
 
@@ -557,7 +559,8 @@ class LoginViewSet(viewsets.ViewSet):
         if not user.check_password(password):
             return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if (int(role_id) == 1 and user.role.id == 1) or (int(role_id) == 2 and user.role.id == 2) or (int(role_id) == 0 and user.role.id == 0):
+        if (int(role_id) == 1 and user.role.id == 1) or (int(role_id) == 2 and user.role.id == 2) or (
+                int(role_id) == 0 and user.role.id == 0):
             return Response(serializers.UserSerializer(user).data, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Can not log in'}, status=status.HTTP_400_BAD_REQUEST)
@@ -574,8 +577,8 @@ def approve_user(request, user_id):
     user = Alumni.objects.get(id=user_id)
     subject = 'Chấp nhận yêu cầu tham gia Mạng Xã Hội Cựu Sinh Viên by HungTS and ngHung'
     message = (
-        f'Chào mứng {user.first_name} {user.last_name} có {user.email} và Mã số sinh viên {user.code} đến với Mạng Xã Hội Cựu Sinh Viên'
-        f'Bạn đã được chấp nhận để truy cập vào hệ thống với username và password bạn đã tạo.'
+        f'Chào mứng {user.first_name} {user.last_name} có {user.email} và Mã số sinh viên {user.code} đến với Mạng Xã Hội Cựu Sinh Viên\n'
+        f'Bạn đã được chấp nhận để truy cập vào hệ thống với username và password bạn đã tạo.\n'
         f'Cảm ơn.')
     from_email = settings.EMAIL_HOST_USER
     recipient_list = [user.email]
@@ -592,6 +595,152 @@ def reject_user(request, user_id):
     return redirect('pending_alumnis')
 
 
+class GroupViewSet(viewsets.ViewSet,
+                   generics.ListAPIView,
+                   generics.UpdateAPIView,
+                   generics.RetrieveAPIView):
+    queryset = Group.objects.filter(active=True)
+    serializer_class = serializers.GroupSerializer
+    permission_classes = [perms.OwnerAuthenticated | perms.IsSuperUser]
+
+    # pagination_class = paginators.RoomPaginator
+
+    def get_permissions(self):
+        if self.action in ['add_user', 'add_user_to_group', 'retrieve']:
+            return [permissions.IsAuthenticated()]
+
+        return [permission() for permission in self.permission_classes]
+
+    def get_object(self):
+        return Group.objects.get(pk=self.kwargs['pk'])
+
+    def retrieve(self, request, pk=None):
+        group = self.get_object()
+        join_groups = JoinGroup.objects.filter(group=group)
+        users = [join_group.user for join_group in join_groups]
+        serializer = serializers.GroupSerializer(group)
+        return Response({
+            'group': serializer.data,
+            'participants': serializers.UserSerializer(users, many=True).data
+        })
+
+    @action(methods=['post'], detail=False, url_path='add_group')
+    def add_group(self, request):
+        g = Group.objects.create(name=request.data.get('name'))
+        return Response(serializers.GroupSerializer(g).data,
+                        status=status.HTTP_201_CREATED)
+
+    @action(methods=['post'], detail=True, url_path='add_user')
+    def add_user_to_group(self, request, pk):
+        try:
+
+            group = self.get_object()
+            print(group.id)
+            list_user_id = request.data.get('list_user_id', [])
+            # print(list_user_id)
+            if not list_user_id:
+                return Response(
+                    {'error': 'list_user_id is required'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            for user_id in list_user_id:
+                user = User.objects.get(id=user_id)
+                if user:
+                    join_group = JoinGroup.objects.get(user=user, group=group)
+                    if join_group:
+                        return Response(
+                            {
+                                'message': f'User is already in this group',
+                                'user': serializers.UserSerializer(user).data
+                            },
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+                    else:
+                        group.add_user(user=user)
+            return Response(
+                {'message': 'Users added to group successfully'},
+                status=status.HTTP_200_OK
+            )
+        except Group.DoesNotExist:
+            return Response(
+                {'error': 'Group not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except User.DoesNotExist:
+            return Response(
+                {'error': 'User not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except ValueError as e:
+            return Response(
+                {'error': {str(e)}},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 
+class NotificationViewSet(viewsets.ViewSet,
+                          generics.ListAPIView,
+                          generics.UpdateAPIView,
+                          generics.RetrieveAPIView):
+    queryset = Notification.objects.filter(active=True)
+    serializer_class = serializers.NotificationSerializer
+    permission_classes = [perms.OwnerAuthenticated | perms.IsSuperUser]
 
+    def get_permissions(self):
+        if self.action in ['add_notification', 'retrieve']:
+            return [permissions.IsAuthenticated()]
+
+        return [permission() for permission in self.permission_classes]
+
+    def get_object(self):
+        return Notification.objects.get()
+
+    def retrieve(self, request, pk=None):
+        notification = self.get_object()
+        serializer = serializers.NotificationSerializer(notification)
+        return Response({serializer.data})
+
+    @action(methods=['post'], detail=False, url_path='add_notification')
+    def add_notification(self, request):
+        title = request.data.get('title')
+        content = request.data.get('content')
+        group_id = request.data.get('group_id')
+
+        print(group_id)
+
+        if not title:
+            return Response(
+                {'error': 'title is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not content:
+            return Response(
+                {'error': 'content is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        try:
+            if group_id:
+                group = Group.objects.get(id=group_id)
+                print(group)
+                n = Notification.objects.create(title=title, content=content, group=group)
+
+                emails = [User.objects.get(id=user.id).email for user in JoinGroup.objects.filter(group=group)]
+
+                subject = title
+                message = (f'{title}\n'
+                           f'{content}\n'
+                           f'Cảm ơn.')
+                from_email = settings.EMAIL_HOST_USER
+                recipient_list = emails
+                send_mail(subject, message, from_email, recipient_list, fail_silently=False)
+            else:
+                n = Notification.objects.create(title=title, content=content)
+            return Response(serializers.NotificationSerializer(n).data,
+                            status=status.HTTP_201_CREATED)
+        except Group.DoesNotExist:
+            return Response(
+                {'error': 'Group not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )

@@ -168,7 +168,7 @@ cloudinary.config(
     api_secret=os.getenv('SECRET_CLOUDINARY')
 )
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_HOST_USER = 'socialmediahungts@gmail.com'
