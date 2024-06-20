@@ -163,8 +163,8 @@ class MySocialMediaAdminSite(admin.AdminSite):
         token_url = os.getenv('URL_SERVER') + 'o/token/'  # Thay thế bằng URL của endpoint token của bạn
         data = {
             'grant_type': 'password',
-            'username': 'admin',
-            'password': '123',
+            'username': os.getenv('ADMIN_USERNAME'),
+            'password': os.getenv('ADMIN_PASSWORD'),
             'client_id': os.getenv('CLIENT_ID_OAUTH'),
             'client_secret': os.getenv('CLIENT_SECRET_OAUTH'),
         }

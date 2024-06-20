@@ -584,16 +584,14 @@ class LoginViewSet(viewsets.ViewSet):
     permission_classes = [permissions.AllowAny]
 
     def create(self, request):
+        required_fields = ['username', 'password', 'role_id']
+        missing_fields = [field for field in required_fields if not request.data.get(field)]
+        if missing_fields:
+            return Response({'error': f"{', '.join(missing_fields)} required"},
+                            status=status.HTTP_400_BAD_REQUEST)
         username = request.data.get('username')
         password = request.data.get('password')
         role_id = request.data.get('role_id')
-
-        if not username:
-            return Response({'error': 'username required'}, status=status.HTTP_400_BAD_REQUEST)
-        if not password:
-            return Response({'error': 'password required'}, status=status.HTTP_400_BAD_REQUEST)
-        if not role_id:
-            return Response({'error': 'role_id required'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             user = User.objects.get(username=username)

@@ -178,7 +178,7 @@ class Group(BaseModel):
         return self.name
 
     def add_user(self, user):
-        if JoinGroup.objects.filter(user=user).exists():
+        if JoinGroup.objects.filter(user=user, group=self).exists():
             raise ValueError("User is already in this group")
         JoinGroup.objects.create(group=self, user=user)
 
