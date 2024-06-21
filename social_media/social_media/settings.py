@@ -178,3 +178,6 @@ EMAIL_USE_TLS = True
 CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1:8000/'
 ]
+
+# Celery settings
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
