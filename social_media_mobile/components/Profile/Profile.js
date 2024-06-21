@@ -27,7 +27,7 @@ export default function Profile({route, navigation}) {
 
   // Get user data and dispatch whe logout 
   const [userInfo, setUserInfo] = useState(user) 
-  
+  console.log(userInfo)
   const [likedList, setLikedList] = useState([])
 
   // check mounted in screen

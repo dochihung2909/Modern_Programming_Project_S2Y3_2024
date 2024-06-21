@@ -106,15 +106,7 @@ const EditProfile = ({navigation}) => {
         type: 1
       })
     } else {
-      if (!validateEmail(usr.email)) {
-        setErr({
-          isErr: true,
-          errMessage: 'Email không hợp lệ',
-          type: 1
-        })
-      } else {
-        setIsModalVisible(true)
-      }
+      setIsModalVisible(true)
     }
     
   }
@@ -128,17 +120,7 @@ const EditProfile = ({navigation}) => {
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}> 
       <ScrollView>
         <View className={('flex-1 p-4 bg-white')}>
-          <Text className={('text-lg font-bold mb-4')}>Edit Profile</Text>
-
-          <View className={('mb-4')}>
-            <Text className={('text-sm mb-2')}>Tên đăng nhập</Text>
-            <TextInput
-              className={('border p-2 rounded')}
-              value={usr.username}
-              onChangeText={(t) => updateSate('username', t)}
-              placeholder="Username"
-            />
-          </View>
+          <Text className={('text-lg font-bold mb-4')}>Edit Profile</Text> 
 
           <View className={('mb-4')}>
             <Text className={('text-sm mb-2')}>Họ</Text>
@@ -158,18 +140,7 @@ const EditProfile = ({navigation}) => {
               onChangeText={(t) => updateSate('last_name', t)}
               placeholder="Last Name"
             />
-          </View>
-          
-
-          <View className={('mb-4')}>
-            <Text className={('text-sm mb-2')}>Email</Text>
-            <TextInput
-              className={('border p-2 rounded')}
-              value={usr.email}
-              onChangeText={(t) => updateSate('email', t)}
-              placeholder="Email"
-            />
-          </View>
+          </View> 
 
           <View className={('mb-4')}>
             <Text className={('text-sm mb-2')}>Ảnh đại diện</Text>
