@@ -55,7 +55,8 @@ export default function Notification({navigation}) {
   return (
     <>
       {loading ? <LoadingScreen /> : 
-        <ScrollView className={('p-4')} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+      <>
+      <ScrollView className={('p-4')} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
         {notis.map((notification) => (
           <TouchableOpacity onPress={() => navigation.navigate('DetailNotification', {'notification': notification})} key={notification.id} className={('p-4 bg-white rounded-lg shadow-md my-2')}>
             <Text className={('text-lg font-bold text-black mb-2')}>{notification.title}</Text>
@@ -63,6 +64,15 @@ export default function Notification({navigation}) {
           </TouchableOpacity>
         ))}
       </ScrollView>
+
+      {user.role == 0 && 
+        <View  className='absolute w-[70%] bottom-5 left-[15%]'>
+            <TouchableOpacity onPress={() => navigation.navigate('PostNotification')} className={'mx-4 bg-blue-500 rounded-lg p-4'}>
+                <Text className={'text-base text-white text-center'}>Gửi thông báo</Text>    
+            </TouchableOpacity> 
+        </View> 
+      } 
+      </>
       }
     </>
     

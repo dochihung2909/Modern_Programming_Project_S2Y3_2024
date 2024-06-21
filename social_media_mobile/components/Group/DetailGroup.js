@@ -39,7 +39,7 @@ const DetailGroup = ({navigation, route}) => {
         
         {user.role == 0 && 
             <View className={'w-full mt-8 '}>
-                <TouchableOpacity className={'mx-4 bg-blue-500 rounded-lg p-4'}>
+                <TouchableOpacity onPress={() => navigation.navigate('PostNotification')} className={'mx-4 bg-blue-500 rounded-lg p-4'}>
                     <Text className={'text-base text-white text-center'}>Gửi thông báo</Text>    
                 </TouchableOpacity> 
             </View> 
