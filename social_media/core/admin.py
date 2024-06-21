@@ -144,6 +144,7 @@ class MySocialMediaAdminSite(admin.AdminSite):
             path('stats/', self.stats_view),
             path('register_lecturer/', self.register_lecturer_view),
             path('notification/', self.notification_view),
+            path('stats/user_post/', self.user_post_view),
         ] + super().get_urls()
 
     def stats_view(self, request):
@@ -154,6 +155,66 @@ class MySocialMediaAdminSite(admin.AdminSite):
             'total_users': total_users,
             'stats': dao.count_post_by_user()
         })
+
+    def get_post_data(self, interval):
+        if interval == 'month':
+            post_data = Post.objects.annotate(interval=TruncMonth('created_date')).values('interval').annotate(
+                count=Count('id')).order_by('interval')
+            user_data = User.objects.annotate(interval=TruncMonth('date_joined')).values('interval').annotate(
+                count=Count('id')).order_by('interval')
+        elif interval == 'year':
+            post_data = Post.objects.annotate(interval=TruncYear('created_date')).values('interval').annotate(
+                count=Count('id')).order_by('interval')
+            user_data = User.objects.annotate(interval=TruncYear('date_joined')).values('interval').annotate(
+                count=Count('id')).order_by('interval')
+        elif interval == 'quarter':
+            post_data = Post.objects.annotate(interval=TruncQuarter('created_date')).values('interval').annotate(
+                count=Count('id')).order_by('interval')
+            user_data = User.objects.annotate(interval=TruncQuarter('date_joined')).values('interval').annotate(
+                count=Count('id')).order_by('interval')
+        else:
+            post_data = []
+            user_data = []
+
+        if interval == 'quarter':
+            post_intervals = [f"{data['interval'].year}-Q{((data['interval'].month - 1) // 3) + 1}" for data in
+                              post_data]
+            user_intervals = [f"{data['interval'].year}-Q{((data['interval'].month - 1) // 3) + 1}" for data in
+                              user_data]
+        else:
+            post_intervals = [data['interval'].strftime('%Y-%m' if interval == 'month' else '%Y') for data in post_data]
+            user_intervals = [data['interval'].strftime('%Y-%m' if interval == 'month' else '%Y') for data in user_data]
+
+        post_counts = [data['count'] for data in post_data]
+        user_counts = [data['count'] for data in user_data]
+
+        return post_intervals, post_counts, user_intervals, user_counts
+
+    def user_post_view(self, request):
+        total_posts = Post.objects.count()
+        total_users = User.objects.count()
+        interval = request.GET.get('interval', 'month')
+        post_intervals, post_counts, user_intervals, user_counts = self.get_post_data(interval)
+        roles = Role.objects.all()
+        role_post_counts = []
+        role_labels = []
+        for role in roles:
+            count = Post.objects.filter(user__role=role).count()
+            role_post_counts.append(count)
+            role_labels.append(role.name)
+        context = {
+            'post_intervals': post_intervals,
+            'post_counts': post_counts,
+            'user_intervals': user_intervals,
+            'user_counts': user_counts,
+            'selected_interval': interval,
+            'total_posts': total_posts,
+            'total_users': total_users,
+            'user_post': dao.count_post_by_user(),
+            'role_labels': role_labels,
+            'role_post_counts': role_post_counts,
+        }
+        return TemplateResponse(request, 'admin/user_post.html', context)
 
     def register_lecturer_view(self, request):
         return TemplateResponse(request, 'admin/register_lecturer.html')
@@ -188,6 +249,16 @@ class AlumniAdmin(admin.ModelAdmin):
     approve_users.short_description = "Approve selected users"
 
 
+class LecturerAdmin(admin.ModelAdmin):
+    list_display = ['username', 'first_name', 'last_name', 'email', 'is_active']
+    actions = ['approve_lecturers']
+
+    def approve_lecturers(self, request, queryset):
+        queryset.update(is_active=True)
+        self.message_user(request, "Selected users have been approved.")
+    approve_lecturers.short_description = "Approve selected users"
+
+
 class GroupAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'created_date', 'active']
 
@@ -204,7 +275,7 @@ admin_site = MySocialMediaAdminSite(name='iSocialMedia')
 
 admin_site.register(Permission)
 admin_site.register(Role, RoleAdmin)
-admin_site.register(User, UserAdmin)
+# admin_site.register(User, UserAdmin)
 admin_site.register(Post, PostAdmin)
 admin_site.register(Tag, TagAdmin)
 admin_site.register(Comment, CommentAdmin)
@@ -215,6 +286,7 @@ admin_site.register(Room, RoomAdmin)
 admin_site.register(Message, MessageAdmin)
 admin_site.register(JoinRoom, JoinRoomAdmin)
 admin_site.register(Alumni, AlumniAdmin)
+admin_site.register(User, LecturerAdmin)
 admin_site.register(Group, GroupAdmin)
 admin_site.register(Notification, NotificationAdmin)
 admin_site.register(JoinGroup, JoinGroupAdmin)

@@ -1,14 +1,18 @@
-from django.conf import settings
 import re
+from datetime import datetime
+
+from django.conf import settings
 from django.contrib.auth.decorators import user_passes_test
 from django.core.mail import send_mail
 from django.shortcuts import render, redirect
-from rest_framework import viewsets, permissions, generics, serializers, status, parsers
+from django.utils import timezone
+from rest_framework import viewsets, permissions, generics, serializers, status
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
+
 from core import serializers, paginators, perms
 from .models import Post, User, Comment, LikePost, LikeComment, Room, JoinRoom, LikeType, Role, Alumni, Group, \
     JoinGroup, Notification
@@ -179,11 +183,9 @@ class UserViewSet(viewsets.ViewSet,
     def get_current_user(self, request):
         user = request.user
         if request.method.__eq__('PATCH'):
-            if request.data.get('password'):
-                new_password = request.data.get('password')
-                if user.check_password(new_password):
-                    user.set_password(new_password)
-                    user.save()
+            for k, v in request.data.items():
+                setattr(user, k, v)
+            user.save()
 
         return Response(serializers.UserDetailSerializer(user).data)
 
@@ -202,13 +204,32 @@ class UserViewSet(viewsets.ViewSet,
         return Response(serializer.data)
 
     @action(methods=['get'], url_path='current-user/notifications', detail=False)
+    # def get_notification(self, request):
+    #     user = request.user
+    #     groups = [Group.objects.get(id=join.group.id) for join in JoinGroup.objects.filter(user=user)]
+    #     notifications = [Notification.objects.filter(group=group) for group in groups]
+    #     notifications.append(Notification.objects.filter(group__isnull=True))
+    #     serializerss = [serializers.NotificationSerializer(noti, many=True) for noti in notifications]
+    #     return Response([serializer.data for serializer in serializerss][0])
+
     def get_notification(self, request):
         user = request.user
         groups = [Group.objects.get(id=join.group.id) for join in JoinGroup.objects.filter(user=user)]
-        notifications = [Notification.objects.filter(group=group) for group in groups]
-        notifications.append(Notification.objects.filter(group__isnull=True))
-        serializerss = [serializers.NotificationSerializer(noti, many=True) for noti in notifications]
-        return Response([serializer.data for serializer in serializerss][0])
+        notifis = []
+        for group in groups:
+            serialize = serializers.NotificationSerializer(Notification.objects.filter(group=group), many=True).data
+            print(serialize)
+            if serialize:
+                for noti in serialize:
+                    notifis.append(noti)
+
+        serialize = serializers.NotificationSerializer(Notification.objects.filter(group__isnull=True), many=True).data
+        for noti in serialize:
+            notifis.append(noti)
+
+        print(notifis)
+        # serializerss = [serializers.NotificationSerializer(noti, many=True) for noti in notifications]
+        return Response(notifis)
 
     @action(methods=['get'], url_path='posts', detail=True)
     def get_posts(self, request, pk):
@@ -515,7 +536,7 @@ class LecturerRegister(viewsets.ViewSet, generics.CreateAPIView):
             last_name=last_name,
             email=email,
             avatar=avatar,
-            role=role
+            role=role,
         )
         serializer = serializers.UserSerializer(user)
 
@@ -586,26 +607,40 @@ class LoginViewSet(viewsets.ViewSet):
     def create(self, request):
         required_fields = ['username', 'password', 'role_id']
         missing_fields = [field for field in required_fields if not request.data.get(field)]
+
         if missing_fields:
             return Response({'error': f"{', '.join(missing_fields)} required"},
                             status=status.HTTP_400_BAD_REQUEST)
+
         username = request.data.get('username')
         password = request.data.get('password')
         role_id = request.data.get('role_id')
 
         try:
             user = User.objects.get(username=username)
+            threshold_time = timezone.now() - timezone.timedelta(hours=24)
+            if user:
+                print(user)
+                if not user.check_password(password):
+                    return Response({'error': 'Sai mat khau'}, status=status.HTTP_400_BAD_REQUEST)
+
+                if (int(role_id) == 1 and user.role.id == 1) or (int(role_id) == 0 and user.role.id == 0):
+                    return Response(serializers.UserSerializer(user).data, status=status.HTTP_200_OK)
+                elif (int(role_id) == 2 and user.role.id == 2):
+                    if User.objects.filter(last_login__isnull=True, date_joined__lte=threshold_time,
+                                           username=username, role=2, is_active=True).first():
+                        user.is_active = False
+                        user.save()
+                        return Response({'error': 'Tai khoan da bi khoa'}, status=status.HTTP_400_BAD_REQUEST)
+                    elif User.objects.filter(last_login__isnull=True, date_joined__lte=threshold_time,
+                                             username=username, role=2, is_active=False).first():
+                        return Response({'error': 'Bi khoa tai khoan roi'}, status=status.HTTP_400_BAD_REQUEST)
+                    else:
+                        return Response(serializers.UserSerializer(user).data, status=status.HTTP_200_OK)
+                else:
+                    return Response({'error': 'Can not log in'}, status=status.HTTP_400_BAD_REQUEST)
         except User.DoesNotExist:
-            return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
-
-        if not user.check_password(password):
-            return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
-
-        if (int(role_id) == 1 and user.role.id == 1) or (int(role_id) == 2 and user.role.id == 2) or (
-                int(role_id) == 0 and user.role.id == 0):
-            return Response(serializers.UserSerializer(user).data, status=status.HTTP_200_OK)
-        else:
-            return Response({'error': 'Can not log in'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Bi khoa tai khoan roi'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @user_passes_test(lambda u: u.is_superuser)
@@ -669,8 +704,15 @@ class GroupViewSet(viewsets.ViewSet,
     @action(methods=['post'], detail=False, url_path='create_group')
     def create_group(self, request):
         try:
+            name = request.data.get('name')
             group = Group.objects.create(name=request.data.get('name'))
-            list_user_id = request.data.get('list_user_id', [])
+            list_user_id = request.data.get('list_user_id')
+            print(type(list_user_id))
+            if not name:
+                return Response(
+                    {'error': 'name is required'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             if not list_user_id:
                 return Response(
                     {'error': 'list_user_id is required'},
@@ -682,7 +724,7 @@ class GroupViewSet(viewsets.ViewSet,
                 if user:
                     group.add_user(user=user)
             return Response(
-                {'message': 'Users added to group successfully'},
+                {serializers.GroupSerializer(group).data},
                 status=status.HTTP_200_OK
             )
         except Group.DoesNotExist:
@@ -706,11 +748,12 @@ class GroupViewSet(viewsets.ViewSet,
         group = self.get_object()
 
         if group.room:
-            return Response({'error': 'Group already has a room'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializers.RoomSerializer(group.room).data, status=status.HTTP_200_OK)
 
         joins = JoinGroup.objects.filter(group=group)
         title_room = 'Room of group ' + group.name
         room = Room.objects.create(title=title_room, room_type='group')
+        room.add_user(request.user)
         for join in joins:
             room.add_user(join.user)
 
@@ -818,3 +861,33 @@ class NotificationViewSet(viewsets.ViewSet,
             )
 
 
+@user_passes_test(lambda u: u.is_superuser)
+def pending_lecturers(request):
+    pending_lectures = User.objects.filter(is_active=False, role=2)
+    print(pending_lectures)
+    return render(request, 'admin/pending_lecturers.html', {'pending_lectures': pending_lectures})
+
+
+@user_passes_test(lambda u: u.is_superuser)
+def approve_lecturers(request, user_id):
+    user = User.objects.get(id=user_id)
+    subject = 'Khởi tạo mật khẩu tham gia Mạng Xã Hội Cựu Sinh Viên by HungTS and ngHung'
+    message = (f'Chào mứng {user.first_name} {user.last_name} có {user.email} đến với Mạng Xã Hội Cựu Sinh Viên\n'
+               f'mật khẩu của bạn là @ou123\n'
+               f'Hãy đổi mật khẩu trong vòng 24 giờ.\n'
+               f'Nếu sau khoảng thời gian này bạn cần liên hệ với admin thông qua email này.\n'
+               f'Cảm ơn.')
+    from_email = settings.EMAIL_HOST_USER
+    recipient_list = [user.email]
+    send_mail(subject, message, from_email, recipient_list, fail_silently=False)
+    user.is_active = True
+    user.date_joined = datetime.now()
+    user.save()
+    return redirect('pending_lecturers')
+
+
+@user_passes_test(lambda u: u.is_superuser)
+def reject_lecturers(request, user_id):
+    user = User.objects.get(id=user_id)
+    user.delete()
+    return redirect('pending_lecturers')
