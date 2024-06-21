@@ -1,0 +1,50 @@
+{% extends 'admin/base_site.html' %}
+
+{% block content %}
+<div class="container mx-auto mt-10 p-6 bg-white shadow-md rounded-md">
+    <h1 class="text-2xl font-semibold mb-4">Post Statistics</h1>
+
+    <form method="get" id="intervalForm" class="mb-6">
+        <label for="interval" class="block text-gray-700 font-medium mb-2">Choose Interval:</label>
+        <select name="interval" id="interval" class="block w-full p-2 border border-gray-300 rounded-md focus:ring focus:ring-indigo-200 focus:border-indigo-500" onchange="document.getElementById('intervalForm').submit();">
+            <option value="month" {% if selected_interval == 'month' %}selected{% endif %}>Month</option>
+            <option value="year" {% if selected_interval == 'year' %}selected{% endif %}>Year</option>
+            <option value="quarter" {% if selected_interval == 'quarter' %}selected{% endif %}>Quarter</option>
+        </select>
+    </form>
+
+    <div class="mb-8">
+        <canvas id="chart" width="400" height="150"></canvas>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let intervalss = {{ intervals|safe }};
+    let countss = {{ counts|safe }};
+
+    window.onload = function() {
+        const ctx = document.getElementById('chart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: intervalss,
+                datasets: [{
+                    label: 'Number of Posts',
+                    data: countss,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}
