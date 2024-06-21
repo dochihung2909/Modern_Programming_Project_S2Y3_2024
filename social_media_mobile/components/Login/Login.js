@@ -108,10 +108,18 @@ const Login = () => {
             
         } catch (ex) {
             console.error(ex);
-            setErr({
-                isErr: true,
-                errMessage:'Sai loại đăng nhập hoặc tên đăng nhập hoặc mật khẩu'
-            })
+            if (ex.response.data.error == 'Tai khoan da bi khoa' || 'Bi khoa tai khoan roi') {
+                setErr({
+                    isErr: true,
+                    errMessage:'Tài khoản đã bị khoá vui lòng liên hệ quản trị viên để mở khoá'
+                })
+            } else {
+                setErr({
+                    isErr: true,
+                    errMessage:'Sai loại đăng nhập hoặc tên đăng nhập hoặc mật khẩu'
+                })
+            }
+            
         } finally {
             setLoading(false);
         }   

@@ -46,7 +46,7 @@ export default function Home({navigation}) {
       }
     })
     return like_type
-  } 
+  }  
 
   useEffect(() => { 
     (isFocused && user != null) && loadPosts()  
